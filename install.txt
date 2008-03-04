@@ -1,0 +1,11 @@
+Hak_tinymce Installation:
+
+*NOTICE*: PLease be aware that this plugin will alter your database.  While nothing should go wrong I can make no guarantees so please have a backup in case anything happens.
+
+1. Upload the tiny_mce folder to somewhere in your document root.  The default location is in your textpattern folder.  You    will be able to point to the installation location in the admin panel.
+
+2. Install and activate the plugin found in hak_tinymce.txt
+
+3. Go to extensions -> hak_tinymce and run the install script to create the preferences table. Settings from a previous       installation will be migrated to the new preferences table.
+
+4. If you did not install the tiny_mce folder in /textpattern/ change the path in the admin panel.
