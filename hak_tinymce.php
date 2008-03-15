@@ -3,11 +3,13 @@ if (@txpinterface == 'admin') {
    add_privs('article','1,2,3,4,5,6');
 	add_privs('hak_tinymce_prefs', '1,2');
 	add_privs('hak_tinymce_js','1,2,3,4,5,6');
+	add_privs('hak_tinymce_compressor_js','1,2,3,4,5,6');
 	add_privs('hak_txpimage','1,2,3,4,5,6');
 	add_privs('hak_txpcatselect','1,2,3,4,5,6');
 	
 	register_callback("hak_tinymce", "article");
 	register_callback("hak_tinymce_js_prep", "hak_tinymce_js");
+	register_callback("hak_tinymce_compressor_js_prep", "hak_tinymce_compressor_js");
 	register_callback("hak_txpimage", "hak_txpimage");
 	register_callback("hak_txpcatselect", "hak_txpcatselect");
 	
@@ -25,9 +27,12 @@ function hak_tinymce_gTxt($what) {
 		'hak_tinymce_body_init' => 'Initialization for article body editor:',
 		'hak_tinymce_excerpt_init' => 'Initialization for article excerpt editor:',
 		'hak_tinymce_callbacks' => 'Callback functions:',
+		'hak_tinymce_compressor_init' => 'Initialization for Gzip compressor editor:',
 		'hak_tinymce_path' => 'Path to tiny_mce script (relative to your textpattern directory or document root):',
 		'file_not_found' => 'File not found in specified location.',
+		'compressor_not_found' => 'Compressor files not found with TinyMCE files.',
 		'line_end' => 'All lines should end with commas.',
+		'compressor_line_end' => 'The last line should not end with a comma.',
 		'install_message' => 'hak_tinymce is not yet properly initialized.  Use the button below to create the preferences table.',
 		'hak_toggle_editor' => 'Toggle Editor',
 		'uninstall' => 'Uninstall',
@@ -39,7 +44,8 @@ function hak_tinymce_gTxt($what) {
 		'enable_body' => 'Enable editor for article body:',
 		'enable_excerpt' => 'Enable editor for article excerpt:',
 		'auto_disable' => 'The toggle is automatically hidden if you disable the editor for the article body and the article excerpt below.',
-		'documentation' => '[Documentation]'
+		'documentation' => '[Documentation]',
+		'use_compressor' => 'Use the Gzip compressor:'
 		);
 	
 	$lang = array(
@@ -56,7 +62,7 @@ function hak_tinymce_gTxt($what) {
 function hak_tinymce($event, $step) {
 	
 	
-	dmp('step:', $step);
+	//dmp('step:', $step);
 	
 	if (!empty($GLOBALS['ID'])) { dmp('global id:', $GLOBALS['ID']);	}
 	if (hak_tinymce_check_install()) {
@@ -70,7 +76,7 @@ function hak_tinymce($event, $step) {
 			$hak_ID = assert_int($hak_ID);
 			$rs = safe_row("textile_body, textile_excerpt","textpattern","ID=$hak_ID");
 			extract($rs);
-			dmp('hak_id:', $hak_ID);	
+			//dmp('hak_id:', $hak_ID);	
 		} else {
 			extract(gpsa(array('textile_body','textile_excerpt')));
 		}
@@ -80,17 +86,17 @@ function hak_tinymce($event, $step) {
 			$textile_body = $use_textile;
 			$textile_excerpt = $use_textile;
 		}
-		dmp('textile_body:',$textile_body, 'textile_excerpt:', $textile_excerpt);
-	
-		$msg = "<script language='javascript' type='text/javascript' src='".$hak_tinymce["tinymce_path"]."'></script>";
-		/*$msg .= "<script language='javascript' type='text/javascript'>";
-		$msg .= "var hak_textile_body = '".$textile_body."';";
-		$msg .= "var hak_textile_excerpt = '".$textile_excerpt."';";
-		$msg .= "</script>";*/
-		$msg .= "<script language='javascript' type='text/javascript' src='index.php?event=hak_tinymce_js&hak_textile_body=".$textile_body."&hak_textile_excerpt=".$textile_excerpt."></script>";
+
+		$hak_tinymce["script_path"] = ($hak_tinymce["use_compressor"]) ? hak_compressor_path($hak_tinymce["tinymce_path"]) : $hak_tinymce["tinymce_path"];
+		$msg = "<script language='javascript' type='text/javascript' src='".$hak_tinymce["script_path"]."'></script>";
+		if ($hak_tinymce["use_compressor"]) {
+			$msg .= "<script language='javascript' type='text/javascript' src='index.php?event=hak_tinymce_compressor_js'></script>";
+		}
+		$msg .= "<script language='javascript' type='text/javascript' src='index.php?event=hak_tinymce_js&hak_textile_body=".$textile_body."&hak_textile_excerpt=".$textile_excerpt."'></script>";
 		if (!($step=='edit' && $hak_tinymce["hide_on_textile_edit"] && ($textile_body != 0 && $textile_excerpt != 0))) {
 			echo $msg;
 			}
+
 	}
 }
 
@@ -193,7 +199,7 @@ function hak_tinymce_js() {
 			var excerptArea = hak_getByName("Excerpt","textarea");
 			if (hak_show_toggle  && (hak_enable_body || hak_enable_excerpt)) {
 				var node = document.getElementById("advanced").parentNode
-				var togglestr = '<h3 class="plain"><a href="#" onclick="toggleDisplay(\'hak_tinymce\'); return false;">'+ hak_toggle_editor +'</a></p>';
+				var togglestr = '<h3 class="plain"><a href="#" onclick="toggleDisplay(\'hak_tinymce\'); return false;">'+ hak_toggle_editor +'</a></h3>';
 				togglestr += '<div id="hak_tinymce" style="display:none">';
 				togglestr += '<p>';
 				if (articleArea && hak_enable_body) {
@@ -271,9 +277,26 @@ EOF;
  return $js;
 }
 //--------------------------------------------
+function hak_tinymce_compressor_js() {
+	extract(hak_get_mceprefs());
+	
+	$js = "tinyMCE_GZ.init({ \n";
+	$js.= rtrim($compressor_init, ",");
+	$js .="});";
+  return $js;
+}
+//--------------------------------------------
 function hak_tinymce_check_install() {
 	// Check if the hak_tinymce table already exists
 	if (getThings("Show tables like '".PFX."txp_hak_tinymce'")) {
+		// if it does check if we need to upgrade
+		$pluginversion = safe_field('version','txp_plugin',"name = 'hak_tinymce'");
+		$prefs = hak_get_mceprefs();
+		$version = (array_key_exists('version', $prefs)) ? $prefs['version'] : "0.0" ;
+		
+		if (!empty($version) && $version != $pluginversion) {  // if the versions don't match send off to upgrade.
+			hak_tinymce_upgrade($version);
+		}
 		return true;
 	}
 	return false;
@@ -314,7 +337,13 @@ function hak_tinymce_install() {
 			$hak_mceSettings_default .= "theme_advanced_buttons2 : \"link,unlink,separator,image,separator,search,replace,separator,cut,copy,paste,separator,code,separator,formatselect\",\n";
 			$hak_mceSettings_default .= "theme_advanced_buttons3 : \"\",\n";
 			$hak_mceSettings_default .= "theme_advanced_toolbar_location : \"top\",\n";
-			$hak_mceSettings_default .= "theme_advanced_toolbar_align : \"left\",";	
+			$hak_mceSettings_default .= "theme_advanced_toolbar_align : \"left\",";
+			
+			$hak_mceSettings_compressor = "theme : \"advanced\",\n";
+			$hak_mceSettings_compressor .= "plugins : \"searchreplace,txpimage\",\n";
+			$hak_mceSettings_compressor .= "disk_cache : \"true\",\n";
+			$hak_mceSettings_compressor .= "languages : \"en\",\n";
+			$hak_mceSettings_compressor .= "debug : \"false\"";
 			
 			// set pref array values properly checking if it had been setup before.
 			$hak_tinymce_prefs["show_toggle"] = (isset($hak_tinymce_show_toggle)) ? $hak_tinymce_show_toggle : "1";
@@ -328,16 +357,47 @@ function hak_tinymce_install() {
 			$hak_tinymce_prefs["enable_body"] = '1';
 			$hak_tinymce_prefs["enable_excerpt"] = '1';
 			
+			
 			// insert them into the new table
 			foreach ($hak_tinymce_prefs as $key => $value) {
 				safe_insert("txp_hak_tinymce","pref_name='".$key."', pref_value='".$value."'");
 			}
+			// Run any necessary upgrades 
+			hak_tinymce_upgrade('0.0');
 			// delete old prefs
 			safe_delete("txp_prefs","name='hak_tinymce_init_form'");
 			safe_delete("txp_prefs","name='hak_tinymce_show_toggle'");
 			safe_delete("txp_prefs","name='hak_tinymce_hide_on_textile_edit'");
 		}
 		return true;
+}
+//-------------------------------------------
+function hak_tinymce_upgrade($installedversion) {
+	if ($installedversion != '0.7') {
+
+		$hak_mceSettings_compressor = "theme : \"simple,advanced\",\n";
+		$hak_mceSettings_compressor .= "plugins : \"searchreplace,-txpimage\",\n";
+		$hak_mceSettings_compressor .= "disk_cache : true,\n";
+		$hak_mceSettings_compressor .= "languages : \"en\",\n";
+		$hak_mceSettings_compressor .= "debug : false";
+		
+		$hak_tinymce_prefs["use_compressor"] = '0';
+		$hak_tinymce_prefs["compressor_init"] = $hak_mceSettings_compressor;
+		
+		if (!safe_field("pref_name", 'txp_hak_tinymce', "pref_name = 'version'")) {
+			safe_insert("txp_hak_tinymce","pref_name='version', pref_value='0.7'");
+		} else {
+			safe_update('txp_hak_tinymce', "pref_value = '0.7'", "pref_name = 'version'");
+		}
+		
+		foreach ($hak_tinymce_prefs as $key => $value) {
+			if (!safe_field("pref_name", 'txp_hak_tinymce', "pref_name = '".$key."'")) {
+				safe_insert("txp_hak_tinymce","pref_name='".$key."', pref_value='".$value."'");
+			} else {
+				safe_update('txp_hak_tinymce', "pref_value = '".$value."'", "pref_name = '".$key."'");
+			}
+		}
+	} // -- End 0.7 upgrade
 }
 //-------------------------------------------
 function hak_get_mceprefs() {
@@ -369,7 +429,17 @@ function hak_tinymce_prefs($event, $step) {
 	if ($step == 'update')
 	{
 		extract(doSlash(gpsa(array(
-			'hak_show_toggle', 'hak_hide_on_textile_edit', 'hak_tinymce_path', 'hak_tinymce_body_init', 'hak_tinymce_excerpt_init', 'hak_tinymce_callbacks','hak_hide_textile_select','hak_enable_body','hak_enable_excerpt'
+			'hak_show_toggle', 
+			'hak_hide_on_textile_edit', 
+			'hak_tinymce_path', 
+			'hak_tinymce_body_init', 
+			'hak_tinymce_excerpt_init', 
+			'hak_tinymce_callbacks',
+			'hak_hide_textile_select',
+			'hak_enable_body',
+			'hak_enable_excerpt',
+			'hak_use_compressor',
+			'hak_tinymce_compressor_init'
 		))));
 
 		safe_update('txp_hak_tinymce', "pref_value = '$hak_show_toggle'", "pref_name = 'show_toggle'");
@@ -381,6 +451,8 @@ function hak_tinymce_prefs($event, $step) {
 		safe_update('txp_hak_tinymce', "pref_value = '$hak_hide_textile_select'", "pref_name = 'hide_textile_select'");
 		safe_update('txp_hak_tinymce', "pref_value = '$hak_enable_body'", "pref_name = 'enable_body'");
 		safe_update('txp_hak_tinymce', "pref_value = '$hak_enable_excerpt'", "pref_name = 'enable_excerpt'");
+		safe_update('txp_hak_tinymce', "pref_value = '$hak_use_compressor'", "pref_name = 'use_compressor'");
+		safe_update('txp_hak_tinymce', "pref_value = '$hak_tinymce_compressor_init'", "pref_name = 'compressor_init'");
  	}
 
 	if (hak_tinymce_check_install()) {
@@ -420,8 +492,17 @@ function hak_tinymce_prefs($event, $step) {
 					n.text_area('hak_tinymce_excerpt_init',200,400,$excerpt_init)
 					).
 				n.graf(hak_tinymce_gTxt('hak_tinymce_callbacks').br.
-					n.text_area('hak_tinymce_callbacks',200,400,htmlspecialchars($callbacks))
+					n.text_area('hak_tinymce_callbacks',200,400,$callbacks)
 					).
+				n.graf(hak_tinymce_gTxt('use_compressor').br.
+					n.yesnoRadio('hak_use_compressor',$use_compressor).
+					hak_file_exists(hak_compressor_path($tinymce_path), "compressor_not_found")
+					).
+				n.graf(hak_tinymce_gTxt('hak_tinymce_compressor_init').br.
+					tag(tag("(".hak_tinymce_gTxt('compressor_line_end').")","em"),"small").
+					n.href(hak_tinymce_gTxt('documentation'),"http://wiki.moxiecode.com/index.php/TinyMCE:Compressor/PHP").br.
+					n.text_area('hak_tinymce_compressor_init',200,400,$compressor_init)
+						).
 				n.n.fInput('submit', 'update', 'Update', 'smallerbox')
 				).
 			'</div>';
@@ -447,18 +528,29 @@ function hak_tinymce_prefs($event, $step) {
 	}
 }
 //----------------------------------------
-function hak_file_exists($file) {
+function hak_file_exists($file, $message = "file_not_found") {
 	global $path_to_site;
 	$out = '';
 	if (!file_exists($file) && !file_exists($path_to_site.$file)) {
-		$out = br.n.tag(hak_tinymce_gTxt('file_not_found'),"span",' style="color:red"');
+		$out = br.n.tag(hak_tinymce_gTxt($message),"span",' style="color:red"');
 	}
 	return $out;
+}
+//----------------------------------------
+function hak_compressor_path($file) {
+	$path = str_replace('tiny_mce.js','tiny_mce_gzip.js',$file);
+	return $path;
 }
 //----------------------------------------
 function hak_tinymce_js_prep() {
 	header('Content-type: application/x-javascript');
 	echo hak_tinymce_js();
+	exit(0);
+}
+//----------------------------------------
+function hak_tinymce_compressor_js_prep() {
+	header('Content-type: application/x-javascript');
+	echo hak_tinymce_compressor_js();
 	exit(0);
 }
 
@@ -488,9 +580,9 @@ function hak_txpimage() {
 			
 			if($thumbnail) {
 				$thumb["path"] = $img_dir.'/'.$id.'t'.$ext;
-				$props = @getimagesize(hu.$thumb["path"]);
-				$thumb["width"] = ($props[0]) ? $props[0] : 1;
-				$thumb["height"] = ($props[1]) ? $props[1] : 1;
+				$props = @getimagesize($path_to_site.'/'.$thumb["path"]);
+				$thumb["width"] = ($props[0]) ? $props[0] : "";
+				$thumb["height"] = ($props[1]) ? $props[1] : "";
 				$thumb["alt"] = $image["alt"];
 				$thumb["caption"] = $image["caption"];
 				$preview = $thumb;
@@ -501,12 +593,20 @@ function hak_txpimage() {
 			//$desiredheight = $preview["height"];
 			if ($preview["width"] > $preview["height"]) {
 				$new["width"] = 100;
-				$new["height"] = (100 / $preview["width"]) * $preview["height"];
+				if (!empty($preview["width"])) {
+                    $new["height"] = (100 / $preview["width"]) * $preview["height"];
+                } else {
+                    $new["height"] = "";
+                }
 				$margin = (100 - $new["height"]) / 2;
 				$margin = intval($margin)."px 0";
 			} else {
 				$new["height"] = 100;
-				$new["width"] = (100 / $preview["height"] ) * $preview["width"];
+				if (!empty($preview["height"])) {
+                    $new["width"] = (100 / $preview["height"] ) * $preview["width"];
+                } else {
+                    $new["width"] = "";
+                }
 				$margin = (100 - $new["width"]) / 2;
 				$margin = "0 ".intval($margin)."px";
 			}
@@ -533,7 +633,7 @@ function hak_txpcatselect() {
 /*
 --- PLUGIN METADATA ---
 Name: hak_tinymce
-Version: 0.6.3a
+Version: 0.7.3
 Type: 1
 Description: A TinyMCE based WYSIWYG editor
 Author: Patrick Woods
