@@ -1,4 +1,54 @@
 <?php
+
+// This is a PLUGIN TEMPLATE.
+
+// Copy this file to a new name like abc_myplugin.php.  Edit the code, then
+// run this file at the command line to produce a plugin for distribution:
+// $ php abc_myplugin.php > abc_myplugin-0.1.txt
+
+// Plugin name is optional.  If unset, it will be extracted from the current
+// file name. Plugin names should start with a three letter prefix which is
+// unique and reserved for each plugin author ("abc" is just an example).
+// Uncomment and edit this line to override:
+$plugin['name'] = 'hak_tinymce';
+
+// Allow raw HTML help, as opposed to Textile.
+// 0 = Plugin help is in Textile format, no raw HTML allowed (default).
+// 1 = Plugin help is in raw HTML.  Not recommended.
+# $plugin['allow_html_help'] = 1;
+
+$plugin['version'] = '0.7.4';
+$plugin['author'] = 'Patrick Woods';
+$plugin['author_uri'] = 'http://www.hakjoon.com/';
+$plugin['description'] = 'A TinyMCE based WYSIWYG editor';
+
+// Plugin load order:
+// The default value of 5 would fit most plugins, while for instance comment
+// spam evaluators or URL redirectors would probably want to run earlier
+// (1...4) to prepare the environment for everything else that follows.
+// Values 6...9 should be considered for plugins which would work late.
+// This order is user-overrideable.
+$plugin['order'] = '5';
+
+// Plugin 'type' defines where the plugin is loaded
+// 0 = public       : only on the public side of the website (default)
+// 1 = public+admin : on both the public and admin side
+// 2 = library      : only when include_plugin() or require_plugin() is called
+// 3 = admin        : only on the admin side
+$plugin['type'] = '1';
+
+// Plugin "flags" signal the presence of optional capabilities to the core plugin loader.
+// Use an appropriately OR-ed combination of these flags.
+// The four high-order bits 0xf000 are available for this plugin's private use
+if (!defined('PLUGIN_HAS_PREFS')) define('PLUGIN_HAS_PREFS', 0x0001); // This plugin wants to receive "plugin_prefs.{$plugin['name']}" events
+if (!defined('PLUGIN_LIFECYCLE_NOTIFY')) define('PLUGIN_LIFECYCLE_NOTIFY', 0x0002); // This plugin wants to receive "plugin_lifecycle.{$plugin['name']}" events
+
+$plugin['flags'] = '0';
+
+if (!defined('txpinterface'))
+        @include_once('zem_tpl.php');
+
+# --- BEGIN PLUGIN CODE ---
 if (@txpinterface == 'admin') {
    add_privs('article','1,2,3,4,5,6');
 	add_privs('hak_tinymce_prefs', '1,2');
@@ -134,7 +184,7 @@ function hak_tinymce_js() {
 		elements: "Excerpt"
 	};
 	
-	var hak_mceTextileMap = new Array(2,1,0);
+	var hak_mceTextileMap = new Array(2,0,1);	
 
 	function hak_textileCheck(obj,element) {
 		var mceControl = tinyMCE.getInstanceById(element);
@@ -175,6 +225,7 @@ function hak_tinymce_js() {
 		var mceControl = tinyMCE.getInstanceById(element);
 		if (mceControl) {
 			tinyMCE.execCommand('mceRemoveControl',false,element);
+			console.log(hak_mceTextileMap[eval("hak_textile_" + elementLC)]);
 			hak_getByName("textile_" + elementLC, "select").selectedIndex = hak_mceTextileMap[eval("hak_textile_" + elementLC)];
 			var hak_toggle = document.getElementById(elementLC + "_mcetoggle");
 			if (hak_toggle) {
@@ -630,29 +681,26 @@ function hak_txpcatselect() {
 	exit(0);
 }
 
-/*
---- PLUGIN METADATA ---
-Name: hak_tinymce
-Version: 0.7.3
-Type: 1
-Description: A TinyMCE based WYSIWYG editor
-Author: Patrick Woods
-Link: http://www.hakjoon.com/
---- BEGIN PLUGIN HELP ---
+
+# --- END PLUGIN CODE ---
+if (0) {
+?>
+<!--
+# --- BEGIN PLUGIN HELP ---
 <style type="text/css">dt {font-weight: bold; margin-top:5px;}</style>
 
 	<h1>hak_tinymce &#8211; WYSIWYG article editor</h1>
 
 
 	<p>This plugin adds a TinyMCE based WYSIWYG editor to Textpattern.</p>
-	
+
 	<h2>Installation</h2>
 	<ol>
 		<li>Upload the included TinyMCE distribution to somewhere in your document root.   The default location is in your /textpattern/ directory.</li>
 		<li>Install the plugin included in hak_tinymce.txt and activate it. <a href="http://www.textpattern.net/wiki/index.php?title=Intermediate_Weblog_Model#Adding_Plugins_to_Your_Textpattern_Installation">Installing plugins</a></li>
 		<li> Go to <em>Extensions -> hak_tinyme</em> and run the installation.</li>
 		<li>If you placed TinyMCE somewhere other then in /textpattern/ you can set the location now</li>
-	</ol> 
+	</ol>
 
 	<h2>Behavior</h2>
 	<ul>
@@ -691,20 +739,20 @@ Link: http://www.hakjoon.com/
 
 	<h3>Default initialization string</h3>
 	<p>This new version uses a mostly stock initialization string with a few exceptions.</p>
-	
+
 	<ul>
 		<li><strong>convert_fonts_to_spans</strong> is set to <em>true</em> because we all should try  to use font tags.  This can be overridden in the init blocks.</li>
 		<li>The <em>TXPImage</em> plugin replaces the standard image insert dialog.  This can be overridden in the init blocks.</li>
 		<li><strong>document_base_url</strong> is automatically set to the value of <em>Site URL</em>.  This can be overridden, but should not be necessary.</li>
 		<li><strong>mode</strong> is set to <em>none</em> so that the toggles work.  This cannot be overridden or else the toggles will not work properly</li>
 	</ul>
-	
+
 	<h2>Inserting images with <em>TXPImage</em></h2>
-	
+
 	<p><em>TXPImage</em> is a custom image browsing plugin that integrates into the TXP backend. It allows you to browse your image categories and insert either the thumbnail or full size images for each image.  It is hopefully easy to use.</p>
-	
+
 	<p><img src="data:image/jpeg;base64,R0lGODlhGAAZAPcAAPb3+PT195et0Ziu0e/z94OexneVwpKqzufu9oOdxq6+1uzx94Sfxubu9uzx9Iq/P4Ofxqa20qS205quzpjHTnSzOIehyoSfx5eu0fP3+PH0+PD0+JKpzWWWO+jw9X2Yw+rv85293O3x9oujxIigxuvu8+3y6u7y68DM38ydTsjZ55CnynqWwubv7Iit0pyx0Jm20rbE2nqZtHiVwuju8niXu5C22nqXxPDz92msOFmKMJuxyY+7Xa6+2K3H34efuerw6F2nLu/x84GcxfP19+nw96B3MO3v8Yukye/z+LG/2H+aw3eWupzKUn2dtH6dtO7z9+3w9Jiuz+Xq8neVu8PO37jG2+zu8JTDRJet0Iyx1uru8mKpMHatV4OexHmWw3mZu+zx6efv9eTs6ZSpzPL2+HyXxHuXw5OpyoCcxmqcQbDI3HeUwU2WTW+hRl+QNbrP4aa503yYxfD094zBR57KSebt94WexvD194SexJq83vH1+O/092ulZOrr6uTo3X6aw4ipy5vIR6fPWYKcxoKdyH6axMzb6VSFK+7v76Cz0X2ZxL/L3neTwqa40pOqzoyjtX6bxcDAwP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAAAAAAALAAAAAAYABkAAAj/ACcJHEiwoMGDCBMSlMSwocOHECUJlKgwIUWKFQ9ezIhwo8AqEbJgOCCgpBRGGicOdJQIgMuXDl6knIRxAIA4kJ44AUPIghkkMQp6nPQoA5o/J0wAiUKkBIgVQlUKHFAGQpgdP5jUMPBFTqMlCgYOHbAnUosRfgKoXUsjj1ipkw4kSePhTIBDPOpg6bKmyIW3NAdywCFjzAw8KgQNalIBhhhAgDEqElJowQ0+cB5QoMMlEAIGkQei6MFiChUoPvrkCNLGxefQBMkcMbAghJ4URmxoaWAI9kArEtiIcKOmwxsdiOws8k2QxBUNG+YQmL7lDvOBSiYMKfChQIIEXsJKEcXIcSHc8tfRX4zIHiJ6hQEBADs%3D" alt="Insert Thumbnail" align="middle" /> This icon is used to insert the thumbnail for the image.</p>
-	
+
 	<p><img src="data:image/jpeg;base64,R0lGODlhGAAZAPcAAJiu0PT195mv0JOrz5Srz5Oqz+/z95mv0aa3056655qvz+fu9ubu9oaxbpa04/Hz916Ri5q35ZbIYoa8a/Lz9Ozx93epnu7z98rU42mVounw95PBipiuz3ac1nanS+jw9oa2t6fSc4aytZSz45Gy0Jy45u/099OeU6XQgYa6YJyx0pKqz368V6C86H27UXKcwmaZP+bt98TTrnWBXYqr3vL193+CVcbR4nuvd2OSkJrLZo7EYn6yoHm5TsLZuZfJaenv8o2t4Jl6NKbQgfD198bR44Cj2om8ZPD0+O3y9+zz99GeU12PiOvv8u3x92mYpIC9UYaKQIrBWKnRg8nIm4Om3O/z+Ofv9aDMko/EXe3v8fP09HmpTYyz0JK10e3x9oGlx2idma6FPnyh2cjT5I3BcOvs7LHA2oq6gvD093+0qGKVO3me15i25HOlSZfJZJyw0Ovy93+9UtGubXqqaoeo3ebt9n+1opLBh4a/VfH0+Jyx0ZDFXKG00nyhxGSXPYWNQ/Dz96DLkp/NfIbAV8HcvsDAwP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAAAAAAALAAAAAAYABkAAAj/AA8JHEiwoMGDCBMSNMSwocOHEA0JlKgwIUWKFQ9ezIhwo0AMCBQMGDmygMkCHG4M9HgIgZktAWLKjKkEyJ6VEwcqoDCiixosU1BsCPOiQ5wDOA9hJBDAAQhBIXRI+IHmCRsNSHMqHUigRps7Q97wkUKoDIQxHwQkXUokAo9BWfJAcTGBiZErarUuNVFCBJ4dcnqwwJGhyoK8WxMfInAhgRcLDY6koJPDT53DawcOSNIiAYkZgKLYABOEBgPELAdU4OLBjZATS8TA+LPmdGaBK5wU2i2DyhwfuwvZAXD7UIEvwZMHj0Fc78A+Wh7oQZImkIHrBqw0UVGczBkBAMKLFRcPp0hxjgu1ok+veL3eiPAhuk8YEAA7" alt="Insert Full Image" align="middle" /> This icon is used to insert the full size image.</p>
 
 	<h2>Known issues</h2>
@@ -720,9 +768,10 @@ Link: http://www.hakjoon.com/
 	<p>This is an update of <a href="http://textpattern.org/plugins/320/mictinymce">mic_tinymce</a>, originally developed by <a href="http://micampe.it/">Michele Campeotto</a>.</p>
 
 	<p>A lot of the admin code was made possible by examining <a href="http://www.upm-plugins.com">Mary&#8217;s plugins</a>.</p>
-	
-	<p>TinyMCE is created and maintained by <a href="http://tinymce.moxiecode.com/">Moxiecode</a> and released under the LGPL.</p>
 
---- END PLUGIN HELP & METADATA ---
-*/
+	<p>TinyMCE is created and maintained by <a href="http://tinymce.moxiecode.com/">Moxiecode</a> and released under the LGPL.</p>
+# --- END PLUGIN HELP ---
+-->
+<?php
+}
 ?>
