@@ -65,6 +65,21 @@ if (@txpinterface == 'admin') {
 	
 	register_tab('extensions', 'hak_tinymce_prefs', 'hak_tinymce');
 	register_callback('hak_tinymce_prefs', 'hak_tinymce_prefs');
+    register_callback('hak_inject_toggle', 'article_ui', 'extend_col_1');
+}
+
+function hak_inject_toggle($event, $step, $context_data) {
+    extract(hak_get_mceprefs());
+
+    if ($show_toggle  && ($enable_body || $enable_excerpt)) {
+        return '<h3 class="plain lever"><a href="#hak_tinymce">Toggle Editor</a></h3>'.
+            '<div id="hak_tinymce" class="toggle" style="display:none">'.
+            graf('<input type="checkbox" name="body_mcetoggle" id="body_mcetoggle" onclick="hak_toggleEditor(\'Body\')" class="checkbox" style="width:auto"" />'.
+                 '<label for="body_mcetoggle">'.ucwords(gTxt('article')).'</label>').
+            graf('<input type="checkbox" name="excerpt_mcetoggle" id="excerpt_mcetoggle" onclick="hak_toggleEditor(\'Excerpt\')" class="checkbox" style="width:auto"" />'.
+                 '<label for="excerpt_mcetoggle">'.ucwords(gTxt('excerpt')).'</label>').
+            '</div>';
+    }
 }
 
 //----------------------------------------
@@ -250,7 +265,7 @@ function hak_tinymce_js() {
 			var excerptArea = hak_getByName("Excerpt","textarea");
 			if (hak_show_toggle  && (hak_enable_body || hak_enable_excerpt)) {
 				var node = document.getElementById("advanced").parentNode
-				var togglestr = '<h3 class="plain"><a href="#" onclick="toggleDisplay(\'hak_tinymce\'); return false;">'+ hak_toggle_editor +'</a></h3>';
+				var togglestr = '<h3 class="plain lever"><a href="#hak_tinymce">'+ hak_toggle_editor +'</a></h3>';
 				togglestr += '<div id="hak_tinymce" style="display:none">';
 				togglestr += '<p>';
 				if (articleArea && hak_enable_body) {
@@ -262,7 +277,7 @@ function hak_tinymce_js() {
 				}
 				togglestr += '</p>';
 				togglestr += '</div>';
-				node.innerHTML = togglestr + node.innerHTML;
+				//node.innerHTML = togglestr + node.innerHTML;
 			}
 			
 			if (articleArea && hak_enable_body) {
