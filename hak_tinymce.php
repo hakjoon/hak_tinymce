@@ -46,7 +46,7 @@ if (!defined('PLUGIN_LIFECYCLE_NOTIFY')) define('PLUGIN_LIFECYCLE_NOTIFY', 0x000
 $plugin['flags'] = '0';
 
 if (!defined('txpinterface'))
-        @include_once('zem_tpl.php');
+    @include_once('zem_tpl.php');
 
 # --- BEGIN PLUGIN CODE ---
 if (@txpinterface == 'admin') {
@@ -64,7 +64,7 @@ if (@txpinterface == 'admin') {
 	register_callback("hak_txpcatselect", "hak_txpcatselect");
 	
 	register_tab('extensions', 'hak_tinymce_prefs', 'hak_tinymce');
-	register_callback('hak_tinymce_prefs', 'hak_tinymce_prefs');
+	register_callback('hak_tinymce::prefs', 'hak_tinymce_prefs');
     register_callback('hak_tinymce::inject_toggle', 'article_ui', 'sidehelp');
 }
 
@@ -88,7 +88,7 @@ class hak_tinymce {
     
     public static function article($event, $step) {
 
-        if (hak_tinymce_check_install()) {
+        if (self::check_install()) {
             $hak_tinymce = self::getPrefs();
             extract(get_prefs());
             
@@ -130,10 +130,133 @@ class hak_tinymce {
 
     public static function compressor_js_prep() {
         header('Content-type: application/x-javascript');
-        echo hak_tinymce_compressor_js();
+        echo self::compressor_js();
         exit(0);
     }
 
+    public static function prefs($event, $step) {
+        pagetop('hak_tinymce '.gTxt('preferences'), ($step == 'update' ? gTxt('preferences_saved') : ''));
+	
+        if ($step == 'install') {
+            // Install the preferences table.
+            self::install();
+        }
+	
+        if ($step == 'uninstall') {
+            //remove table
+            safe_query("DROP TABLE ".PFX."txp_hak_tinymce");
+        }
+	
+        if ($step == 'update') {
+            extract(doSlash(gpsa(array(
+                                       'hak_show_toggle', 
+                                       'hak_hide_on_textile_edit', 
+                                       'hak_tinymce_path', 
+                                       'hak_tinymce_body_init', 
+                                       'hak_tinymce_excerpt_init', 
+                                       'hak_tinymce_callbacks',
+                                       'hak_hide_textile_select',
+                                       'hak_enable_body',
+                                       'hak_enable_excerpt',
+                                       'hak_use_compressor',
+                                       'hak_tinymce_compressor_init'
+                                       ))));
+
+            safe_update('txp_hak_tinymce', "pref_value = '$hak_show_toggle'", "pref_name = 'show_toggle'");
+            safe_update('txp_hak_tinymce', "pref_value = '$hak_hide_on_textile_edit'", "pref_name = 'hide_on_textile_edit'");
+            safe_update('txp_hak_tinymce', "pref_value = '$hak_tinymce_path'", "pref_name = 'tinymce_path'");
+            safe_update('txp_hak_tinymce', "pref_value = '$hak_tinymce_body_init'", "pref_name = 'body_init'");
+            safe_update('txp_hak_tinymce', "pref_value = '$hak_tinymce_excerpt_init'", "pref_name = 'excerpt_init'");
+            safe_update('txp_hak_tinymce', "pref_value = '$hak_tinymce_callbacks'", "pref_name = 'callbacks'");
+            safe_update('txp_hak_tinymce', "pref_value = '$hak_hide_textile_select'", "pref_name = 'hide_textile_select'");
+            safe_update('txp_hak_tinymce', "pref_value = '$hak_enable_body'", "pref_name = 'enable_body'");
+            safe_update('txp_hak_tinymce', "pref_value = '$hak_enable_excerpt'", "pref_name = 'enable_excerpt'");
+            safe_update('txp_hak_tinymce', "pref_value = '$hak_use_compressor'", "pref_name = 'use_compressor'");
+            safe_update('txp_hak_tinymce', "pref_value = '$hak_tinymce_compressor_init'", "pref_name = 'compressor_init'");
+        }
+
+        if (self::check_install()) {
+            extract(self::getPrefs());
+            echo n.t.'<div style="margin: auto; width:40%;">'.
+                n.t.t.hed('hak_tinymce '.gTxt('Preferences'), '1').
+                n.n.form(
+                         n.eInput('hak_tinymce_prefs').
+                         n.sInput('update').
+                         n.fInput('submit', 'update', 'Update', 'smallerbox').
+                         n.graf(self::mce_gTxt('hak_show_toggle').br.
+                                n.yesnoRadio('hak_show_toggle',$show_toggle).br.
+                                n.tag(tag(self::mce_gTxt('auto_disable'),"em"),"small")
+                                ).
+                         n.graf(self::mce_gTxt('hak_hide_on_textile_edit').br.
+                                n.yesnoRadio('hak_hide_on_textile_edit',$hide_on_textile_edit)
+                                ).
+                         n.graf(self::mce_gTxt('hak_hide_textile_select').br.
+                                n.yesnoRadio('hak_hide_textile_select',$hide_textile_select)
+                                ).
+                         n.graf(self::mce_gTxt('hak_tinymce_path').br.
+                                n.finput('text','hak_tinymce_path',$tinymce_path,'','','',60,'','hak_tinymce_path').
+                                hak_file_exists($tinymce_path)
+                                ).
+                         n.graf(self::mce_gTxt('enable_body').br.
+                                n.yesnoRadio('hak_enable_body',$enable_body)
+                                ).
+                         n.graf(self::mce_gTxt('hak_tinymce_body_init').br.
+                                tag(tag("(".self::mce_gTxt('line_end').")","em"),"small").n.href(self::mce_gTxt('documentation'),"http://tinymce.moxiecode.com/documentation.php").br.
+                                n.text_area('hak_tinymce_body_init',200, 400, $body_init)
+                                ).
+                         n.graf(self::mce_gTxt('enable_excerpt').br.
+                                n.yesnoRadio('hak_enable_excerpt',$enable_excerpt)
+                                ).
+                         n.graf(self::mce_gTxt('hak_tinymce_excerpt_init').br.
+                                tag(tag("(".self::mce_gTxt('line_end').")","em"),"small").n.href(self::mce_gTxt('documentation'),"http://tinymce.moxiecode.com/documentation.php").br.
+                                n.text_area('hak_tinymce_excerpt_init',200,400,$excerpt_init)
+                                ).
+                         n.graf(self::mce_gTxt('hak_tinymce_callbacks').br.
+                                n.text_area('hak_tinymce_callbacks',200,400,$callbacks)
+                                ).
+                         n.graf(self::mce_gTxt('use_compressor').br.
+                                n.yesnoRadio('hak_use_compressor',$use_compressor).
+                                hak_file_exists(hak_compressor_path($tinymce_path), "compressor_not_found")
+                                ).
+                         n.graf(self::mce_gTxt('hak_tinymce_compressor_init').br.
+                                tag(tag("(".self::mce_gTxt('compressor_line_end').")","em"),"small").
+                                n.href(self::mce_gTxt('documentation'),"http://wiki.moxiecode.com/index.php/TinyMCE:Compressor/PHP").br.
+                                n.text_area('hak_tinymce_compressor_init',200,400,$compressor_init)
+                                ).
+                         n.n.fInput('submit', 'update', 'Update', 'smallerbox')
+                         ).
+                '</div>';
+			echo n.t.'<div style="margin: 60px auto 0; width:40%;">'.
+				n.hed(self::mce_gTxt('uninstall'), '1').
+				n.t.t.graf(self::mce_gTxt('uninstall_message')).
+				n.n.form(
+                         n.eInput('hak_tinymce_prefs').
+                         n.sInput('uninstall').
+                         n.n.fInput('submit', 'uninstall', 'Uninstall ', 'smallerbox'),"","confirm('".self::mce_gTxt('uninstall_confirm')."')"
+                         ).
+				'</div>';
+        } else {
+            echo n.t.'<div style="margin: auto; width:40%;">'.
+                n.t.t.hed('hak_tinymce '.gTxt('Preferences'), '1').
+                n.graf(self::mce_gTxt('install_message')).
+                n.n.form(
+                         n.eInput('hak_tinymce_prefs').
+                         n.sInput('install').
+                         n.n.fInput('submit', 'install', 'Install ', 'smallerbox')
+                         ).
+                '</div>';
+        }
+    }
+
+ // Private functions
+    private function compressor_js() {
+        extract(self::getPrefs());
+        
+        $js = "tinyMCE_GZ.init({ \n";
+        $js.= rtrim($compressor_init, ",");
+        $js .="});";
+        return $js;
+    }
 
     private function js() {
 
@@ -187,12 +310,12 @@ class hak_tinymce {
                             if (!!mceControl) {
                                 removeControl({
                                     id:id,
-                                    checkbox:this
+                                            checkbox:this
                                             });
                             } else {
                                 addControl({
                                     id:id, 
-                                    checkbox:this
+                                            checkbox:this
                                             });
                             }
                         }
@@ -207,14 +330,8 @@ class hak_tinymce {
 EOF;
 		return $js;
     }
-    
-    //--support functions 
-    private function is_edit_screen() {
-        extract( gpsa(array('from_view', 'view')));
-        return (empty($from_view) || $view == 'text');
-    }
-
-    public static function getPrefs() {
+   
+    private function getPrefs() {
         global $mcePrefs;
         
         if (!$mcePrefs) {
@@ -229,7 +346,13 @@ EOF;
         }
         return $mcePrefs;
     }
-    
+ 
+    //--support functions 
+    private function is_edit_screen() {
+        extract( gpsa(array('from_view', 'view')));
+        return (empty($from_view) || $view == 'text');
+    }
+
     private function mce_gTxt($what) {
         global $language;
 	
@@ -269,225 +392,33 @@ EOF;
 		return $msg;
     }
 
-} //--- End Class
+    private function check_install() {
+        // Check if the hak_tinymce table already exists
+        if (getThings("Show tables like '".PFX."txp_hak_tinymce'")) {
+            // if it does check if we need to upgrade
+            $pluginversion = safe_field('version','txp_plugin',"name = 'hak_tinymce'");
+            $prefs = self::getPrefs();
+            $version = (array_key_exists('version', $prefs)) ? $prefs['version'] : "0.0" ;
+            
+            if (!empty($version) && $version != $pluginversion) {  // if the versions don't match send off to upgrade.
+                self::upgrade($version);
+            }
+            return true;
+        }
+        return false;
+    }
 
-//---------------------------------
-
-
-//---------------------------------
-function hak_tinymce_oldjs() {
-	
-	extract (gpsa(array('hak_textile_body','hak_textile_excerpt')));
-	extract(hak_get_mceprefs());
-	
-	$js = "var hak_show_toggle = ".$show_toggle.";\n\n";
-	$js .= "var hak_textile_body = '".$hak_textile_body."';";
-	$js .= "var hak_textile_excerpt = '".$hak_textile_excerpt."';";
-	$js .= "var hak_article_toggle = '<input type=\"checkbox\" name=\"body_mcetoggle\" id=\"body_mcetoggle\" onclick=\"hak_toggleEditor(\'Body\')\" /><label for=\"body_mcetoggle\">".gTxt('article')."</label>';\n";
-	$js .= "var hak_excerpt_toggle = '<input type=\"checkbox\" name=\"excerpt_mcetoggle\" id=\"excerpt_mcetoggle\" onclick=\"hak_toggleEditor(\'Excerpt\')\" /><label for=\"excerpt_mcetoggle\">".gTxt('excerpt')."</label>';\n";
-	$js .= "var hak_toggle_editor = '".hak_tinymce_gTxt('hak_toggle_editor')."';\n";
-	$js .= "var hak_hide_textile_select = ".$hide_textile_select.";\n";
-	$js .= "var document_base_url = '".hu."';\n";
-	$js .= "var hak_enable_body = ".$enable_body.";\n";
-	$js .= "var hak_enable_excerpt = ".$enable_excerpt.";\n";
-	$js .= <<<EOF
-	
-	// we create an associative array with our settings so we can assign them when we trigger the controls
-	var hak_mceSettings = [];
-	hak_mceSettings["body"] = {
-		document_base_url: document_base_url,
-		$body_init
-		mode: "none",
-		elements: "Body"
-	};
-	
-	hak_mceSettings["excerpt"] = {
-		document_base_url: document_base_url,
-		$excerpt_init
-		mode: "none",
-		elements: "Excerpt"
-	};
-	
-	var hak_mceTextileMap = new Array(2,0,1);	
-
-	function hak_textileCheck(obj,element) {
-		var mceControl = tinyMCE.getInstanceById(element);
-		var toggle = document.getElementById(element.toLowerCase() + "_mcetoggle");
-		if (mceControl && obj.options.selectedIndex != 2) {
-			tinyMCE.execCommand('mceRemoveControl',false,element);
-			toggle.checked = false;
-		}
-	}
-	
-	function hak_getByName(name,tagName) {
-		var aTags = document.getElementsByTagName(tagName);
-	
-		for (var i = 0;i < aTags.length;i++) {
-			if (aTags[i].name == name) {
-				return aTags[i];
-			}
-		}
-		return false;
-	}
-	
-	function hak_addControl(element) {
-		var elementLC = element.toLowerCase();
-		tinyMCE.settings = hak_mceSettings[elementLC]; // this tells tinyMCE which config to use
-		var mceControl = tinyMCE.getInstanceById(element);
-		if (!mceControl) {
-			tinyMCE.execCommand('mceAddControl',false,element);
-			hak_getByName("textile_" + elementLC, "select").selectedIndex = 2;
-			var hak_toggle = document.getElementById(elementLC + "_mcetoggle");
-			if (hak_toggle) {
-				hak_toggle.checked = true;
-			}
-		}
-	}
-	
-	function hak_removeControl(element) {
-		var elementLC = element.toLowerCase();
-		var mceControl = tinyMCE.getInstanceById(element);
-		if (mceControl) {
-			tinyMCE.execCommand('mceRemoveControl',false,element);
-			console.log(hak_mceTextileMap[eval("hak_textile_" + elementLC)]);
-			hak_getByName("textile_" + elementLC, "select").selectedIndex = hak_mceTextileMap[eval("hak_textile_" + elementLC)];
-			var hak_toggle = document.getElementById(elementLC + "_mcetoggle");
-			if (hak_toggle) {
-				hak_toggle.checked = false;
-			}
-		}
-	}
-	
-	function hak_toggleEditor(element) {
-		var mceControl = tinyMCE.getInstanceById(element);
-		if (mceControl) {
-			hak_removeControl(element);
-		} else {
-			hak_addControl(element);
-		}
-	}
-	
-
-	function hak_tinyMCE() {
-		if (document.article.from_view.value == "text") {
-			var articleArea = hak_getByName("Body","textarea");
-			var excerptArea = hak_getByName("Excerpt","textarea");
-			if (hak_show_toggle  && (hak_enable_body || hak_enable_excerpt)) {
-				var node = document.getElementById("advanced").parentNode
-				var togglestr = '<h3 class="plain lever"><a href="#hak_tinymce">'+ hak_toggle_editor +'</a></h3>';
-				togglestr += '<div id="hak_tinymce" style="display:none">';
-				togglestr += '<p>';
-				if (articleArea && hak_enable_body) {
-					togglestr += hak_article_toggle;
-					togglestr += '<br />';
-				}
-				if (excerptArea && hak_enable_excerpt) {
-					togglestr += hak_excerpt_toggle;
-				}
-				togglestr += '</p>';
-				togglestr += '</div>';
-				//node.innerHTML = togglestr + node.innerHTML;
-			}
-			
-			if (articleArea && hak_enable_body) {
-				var textileSelectBody = hak_getByName("textile_body","select");
-				if (hak_hide_textile_select) {
-					textileSelectBody.parentNode.style.display = 'none';
-				}
-				if (textileSelectBody) {
-					textileSelectBody.onchange = function() {
-						hak_textileCheck(this,'Body');
-					}
-					if (textileSelectBody.options[textileSelectBody.selectedIndex].value == 0) {
-						hak_addControl('Body');
-					}
-				}
-			}
-			
-			if (excerptArea && hak_enable_excerpt) {
-				var textileSelectExcerpt = hak_getByName("textile_excerpt","select");
-				if (hak_hide_textile_select) {
-					textileSelectExcerpt.parentNode.style.display = 'none';
-				}
-				if (textileSelectExcerpt) {
-					textileSelectExcerpt.onchange = function() {
-						hak_textileCheck(this, 'Excerpt');
-					}
-					if (textileSelectExcerpt.options[textileSelectExcerpt.selectedIndex].value == 0) {
-						hak_addControl('Excerpt');
-					}
-				}
-			}
-			
-		//-- end if from_view == text
-		} else {
-			var articleForm = hak_getByName("article","form");
-			var bodyTextile = document.createElement("input");
-				bodyTextile.type="hidden";
-				bodyTextile.name = "textile_body";
-				bodyTextile.value = hak_textile_body;
-			articleForm.appendChild(bodyTextile);
-				
-			var excerptTextile = document.createElement("input");
-				excerptTextile.type="hidden";
-				excerptTextile.name = "textile_excerpt";
-				excerptTextile.value = hak_textile_excerpt;
-			articleForm.appendChild(excerptTextile)
-		}
-	}
-	
-	addEvent(window,'load',function() {
-			hak_tinyMCE();
-		}
-	);
-	
-	// These are any user specified callback functions
-	$callbacks
-	
-	// initialize the two instances that won't really be used but is needed.
-	tinyMCE.init(hak_mceSettings["body"]);
-	tinyMCE.init(hak_mceSettings["excerpt"]);
-		
-EOF;
- return $js;
-}
-//--------------------------------------------
-function hak_tinymce_compressor_js() {
-	extract(hak_get_mceprefs());
-	
-	$js = "tinyMCE_GZ.init({ \n";
-	$js.= rtrim($compressor_init, ",");
-	$js .="});";
-  return $js;
-}
-//--------------------------------------------
-function hak_tinymce_check_install() {
-	// Check if the hak_tinymce table already exists
-	if (getThings("Show tables like '".PFX."txp_hak_tinymce'")) {
-		// if it does check if we need to upgrade
-		$pluginversion = safe_field('version','txp_plugin',"name = 'hak_tinymce'");
-		$prefs = hak_tinymce::getPrefs();
-		$version = (array_key_exists('version', $prefs)) ? $prefs['version'] : "0.0" ;
-		
-		if (!empty($version) && $version != $pluginversion) {  // if the versions don't match send off to upgrade.
-			hak_tinymce_upgrade($version);
-		}
-		return true;
-	}
-	return false;
-}
-//--------------------------------------------
-function hak_tinymce_install() {
-		
+    private function install() {
+        
 		//figure out what MySQL version we are using (from _update.php)
 		$mysqlversion = mysql_get_server_info();
 		$tabletype = ( intval($mysqlversion[0]) >= 5 || preg_match('#^4\.(0\.[2-9]|(1[89]))|(1\.[2-9])#',$mysqlversion)) 
-						? " ENGINE=MyISAM "
-						: " TYPE=MyISAM ";
+            ? " ENGINE=MyISAM "
+            : " TYPE=MyISAM ";
 		if ( isset($txpcfg['dbcharset']) && (intval($mysqlversion[0]) >= 5 || preg_match('#^4\.[1-9]#',$mysqlversion))) 
-		{
-			$tabletype .= " CHARACTER SET = ". $txpcfg['dbcharset'] ." ";
-		}
+            {
+                $tabletype .= " CHARACTER SET = ". $txpcfg['dbcharset'] ." ";
+            }
 		
 		// Create the hak_tinymce table
 		$hak_tinymce_prefs_table = safe_query("CREATE TABLE `".PFX."txp_hak_tinymce` (
@@ -538,164 +469,49 @@ function hak_tinymce_install() {
 				safe_insert("txp_hak_tinymce","pref_name='".$key."', pref_value='".$value."'");
 			}
 			// Run any necessary upgrades 
-			hak_tinymce_upgrade('0.0');
+            self::upgrade('0.0');
 			// delete old prefs
 			safe_delete("txp_prefs","name='hak_tinymce_init_form'");
 			safe_delete("txp_prefs","name='hak_tinymce_show_toggle'");
 			safe_delete("txp_prefs","name='hak_tinymce_hide_on_textile_edit'");
 		}
 		return true;
-}
-//-------------------------------------------
-function hak_tinymce_upgrade($installedversion) {
-	if ($installedversion != '0.7') {
+    }
+    private function upgrade($installedversion) {
+        if ($installedversion != '0.7') {
+            
+            $hak_mceSettings_compressor = "theme : \"simple,advanced\",\n";
+            $hak_mceSettings_compressor .= "plugins : \"searchreplace,-txpimage\",\n";
+            $hak_mceSettings_compressor .= "disk_cache : true,\n";
+            $hak_mceSettings_compressor .= "languages : \"en\",\n";
+            $hak_mceSettings_compressor .= "debug : false";
+            
+            $hak_tinymce_prefs["use_compressor"] = '0';
+            $hak_tinymce_prefs["compressor_init"] = $hak_mceSettings_compressor;
+            
+            if (!safe_field("pref_name", 'txp_hak_tinymce', "pref_name = 'version'")) {
+                safe_insert("txp_hak_tinymce","pref_name='version', pref_value='0.7'");
+            } else {
+                safe_update('txp_hak_tinymce', "pref_value = '0.7'", "pref_name = 'version'");
+            }
+            
+            foreach ($hak_tinymce_prefs as $key => $value) {
+                if (!safe_field("pref_name", 'txp_hak_tinymce', "pref_name = '".$key."'")) {
+                    safe_insert("txp_hak_tinymce","pref_name='".$key."', pref_value='".$value."'");
+                } else {
+                    safe_update('txp_hak_tinymce', "pref_value = '".$value."'", "pref_name = '".$key."'");
+                }
+            }
+        } // -- End 0.7 upgrade
+    }
+} //--- End Class
 
-		$hak_mceSettings_compressor = "theme : \"simple,advanced\",\n";
-		$hak_mceSettings_compressor .= "plugins : \"searchreplace,-txpimage\",\n";
-		$hak_mceSettings_compressor .= "disk_cache : true,\n";
-		$hak_mceSettings_compressor .= "languages : \"en\",\n";
-		$hak_mceSettings_compressor .= "debug : false";
-		
-		$hak_tinymce_prefs["use_compressor"] = '0';
-		$hak_tinymce_prefs["compressor_init"] = $hak_mceSettings_compressor;
-		
-		if (!safe_field("pref_name", 'txp_hak_tinymce', "pref_name = 'version'")) {
-			safe_insert("txp_hak_tinymce","pref_name='version', pref_value='0.7'");
-		} else {
-			safe_update('txp_hak_tinymce', "pref_value = '0.7'", "pref_name = 'version'");
-		}
-		
-		foreach ($hak_tinymce_prefs as $key => $value) {
-			if (!safe_field("pref_name", 'txp_hak_tinymce', "pref_name = '".$key."'")) {
-				safe_insert("txp_hak_tinymce","pref_name='".$key."', pref_value='".$value."'");
-			} else {
-				safe_update('txp_hak_tinymce', "pref_value = '".$value."'", "pref_name = '".$key."'");
-			}
-		}
-	} // -- End 0.7 upgrade
-}
-
-//-------------------------------------------
-function hak_tinymce_prefs($event, $step) {
-	pagetop('hak_tinymce '.gTxt('preferences'), ($step == 'update' ? gTxt('preferences_saved') : ''));
-	
-	if ($step == 'install') {
-		// Install the preferences table.
-		hak_tinymce_install();
-	}
-	
-	if ($step == 'uninstall') {
-		//remove table
-		safe_query("DROP TABLE ".PFX."txp_hak_tinymce");
-	}
-	
-	if ($step == 'update')
-	{
-		extract(doSlash(gpsa(array(
-			'hak_show_toggle', 
-			'hak_hide_on_textile_edit', 
-			'hak_tinymce_path', 
-			'hak_tinymce_body_init', 
-			'hak_tinymce_excerpt_init', 
-			'hak_tinymce_callbacks',
-			'hak_hide_textile_select',
-			'hak_enable_body',
-			'hak_enable_excerpt',
-			'hak_use_compressor',
-			'hak_tinymce_compressor_init'
-		))));
-
-		safe_update('txp_hak_tinymce', "pref_value = '$hak_show_toggle'", "pref_name = 'show_toggle'");
-		safe_update('txp_hak_tinymce', "pref_value = '$hak_hide_on_textile_edit'", "pref_name = 'hide_on_textile_edit'");
-		safe_update('txp_hak_tinymce', "pref_value = '$hak_tinymce_path'", "pref_name = 'tinymce_path'");
-		safe_update('txp_hak_tinymce', "pref_value = '$hak_tinymce_body_init'", "pref_name = 'body_init'");
-		safe_update('txp_hak_tinymce', "pref_value = '$hak_tinymce_excerpt_init'", "pref_name = 'excerpt_init'");
-		safe_update('txp_hak_tinymce', "pref_value = '$hak_tinymce_callbacks'", "pref_name = 'callbacks'");
-		safe_update('txp_hak_tinymce', "pref_value = '$hak_hide_textile_select'", "pref_name = 'hide_textile_select'");
-		safe_update('txp_hak_tinymce', "pref_value = '$hak_enable_body'", "pref_name = 'enable_body'");
-		safe_update('txp_hak_tinymce', "pref_value = '$hak_enable_excerpt'", "pref_name = 'enable_excerpt'");
-		safe_update('txp_hak_tinymce', "pref_value = '$hak_use_compressor'", "pref_name = 'use_compressor'");
-		safe_update('txp_hak_tinymce', "pref_value = '$hak_tinymce_compressor_init'", "pref_name = 'compressor_init'");
- 	}
-
-	if (hak_tinymce_check_install()) {
-		extract(hak_get_mceprefs());
-		echo n.t.'<div style="margin: auto; width:40%;">'.
-			n.t.t.hed('hak_tinymce '.gTxt('Preferences'), '1').
-			n.n.form(
-				n.eInput('hak_tinymce_prefs').
-				n.sInput('update').
-				n.fInput('submit', 'update', 'Update', 'smallerbox').
-				n.graf(hak_tinymce_gTxt('hak_show_toggle').br.
-					n.yesnoRadio('hak_show_toggle',$show_toggle).br.
-					n.tag(tag(hak_tinymce_gTxt('auto_disable'),"em"),"small")
-					).
-				n.graf(hak_tinymce_gTxt('hak_hide_on_textile_edit').br.
-					n.yesnoRadio('hak_hide_on_textile_edit',$hide_on_textile_edit)
-					).
-					n.graf(hak_tinymce_gTxt('hak_hide_textile_select').br.
-						n.yesnoRadio('hak_hide_textile_select',$hide_textile_select)
-						).
-				n.graf(hak_tinymce_gTxt('hak_tinymce_path').br.
-					n.finput('text','hak_tinymce_path',$tinymce_path,'','','',60,'','hak_tinymce_path').
-					hak_file_exists($tinymce_path)
-					).
-				n.graf(hak_tinymce_gTxt('enable_body').br.
-					n.yesnoRadio('hak_enable_body',$enable_body)
-					).
-				n.graf(hak_tinymce_gTxt('hak_tinymce_body_init').br.
-				tag(tag("(".hak_tinymce_gTxt('line_end').")","em"),"small").n.href(hak_tinymce_gTxt('documentation'),"http://tinymce.moxiecode.com/documentation.php").br.
-					n.text_area('hak_tinymce_body_init',200, 400, $body_init)
-					).
-					n.graf(hak_tinymce_gTxt('enable_excerpt').br.
-					n.yesnoRadio('hak_enable_excerpt',$enable_excerpt)
-					).
-				n.graf(hak_tinymce_gTxt('hak_tinymce_excerpt_init').br.
-				tag(tag("(".hak_tinymce_gTxt('line_end').")","em"),"small").n.href(hak_tinymce_gTxt('documentation'),"http://tinymce.moxiecode.com/documentation.php").br.
-					n.text_area('hak_tinymce_excerpt_init',200,400,$excerpt_init)
-					).
-				n.graf(hak_tinymce_gTxt('hak_tinymce_callbacks').br.
-					n.text_area('hak_tinymce_callbacks',200,400,$callbacks)
-					).
-				n.graf(hak_tinymce_gTxt('use_compressor').br.
-					n.yesnoRadio('hak_use_compressor',$use_compressor).
-					hak_file_exists(hak_compressor_path($tinymce_path), "compressor_not_found")
-					).
-				n.graf(hak_tinymce_gTxt('hak_tinymce_compressor_init').br.
-					tag(tag("(".hak_tinymce_gTxt('compressor_line_end').")","em"),"small").
-					n.href(hak_tinymce_gTxt('documentation'),"http://wiki.moxiecode.com/index.php/TinyMCE:Compressor/PHP").br.
-					n.text_area('hak_tinymce_compressor_init',200,400,$compressor_init)
-						).
-				n.n.fInput('submit', 'update', 'Update', 'smallerbox')
-				).
-			'</div>';
-			echo n.t.'<div style="margin: 60px auto 0; width:40%;">'.
-				n.hed(hak_tinymce_gTxt('uninstall'), '1').
-				n.t.t.graf(hak_tinymce_gTxt('uninstall_message')).
-				n.n.form(
-					n.eInput('hak_tinymce_prefs').
-					n.sInput('uninstall').
-					n.n.fInput('submit', 'uninstall', 'Uninstall ', 'smallerbox'),"","confirm('".hak_tinymce_gTxt('uninstall_confirm')."')"
-					).
-				'</div>';
-	} else {
-		echo n.t.'<div style="margin: auto; width:40%;">'.
-			n.t.t.hed('hak_tinymce '.gTxt('Preferences'), '1').
-			n.graf(hak_tinymce_gTxt('install_message')).
-			n.n.form(
-				n.eInput('hak_tinymce_prefs').
-				n.sInput('install').
-				n.n.fInput('submit', 'install', 'Install ', 'smallerbox')
-				).
-			'</div>';
-	}
-}
 //----------------------------------------
 function hak_file_exists($file, $message = "file_not_found") {
 	global $path_to_site;
 	$out = '';
 	if (!file_exists($file) && !file_exists($path_to_site.$file)) {
-		$out = br.n.tag(hak_tinymce_gTxt($message),"span",' style="color:red"');
+		$out = br.n.tag(self::mce_gTxt($message),"span",' style="color:red"');
 	}
 	return $out;
 }
@@ -739,7 +555,7 @@ function hak_txpimage() {
 				$thumb["caption"] = $image["caption"];
 				$preview = $thumb;
 				$thumbclick = 'onclick=\'insertImage(this,"'.$thumb["path"].'","'.$thumb["width"].'","'.$thumb["height"].'","'.$thumb["alt"].'","'.$image["caption"].'");return'.n.'false;\'';
-				$thumbclick = 	'<a href="#" '.$thumbclick.'><img src="images/pictures.png" width="18" height="18" title="'.hak_tinymce_gTxt('insert_thumb').'" alt="'.hak_tinymce_gTxt('insert_thumb').'" /></a>';
+				$thumbclick = 	'<a href="#" '.$thumbclick.'><img src="images/pictures.png" width="18" height="18" title="'.hak_tinymce::mce_gTxt('insert_thumb').'" alt="'.hak_tinymce::mce_gTxt('insert_thumb').'" /></a>';
 			}
 			
 			//$desiredheight = $preview["height"];
@@ -764,9 +580,9 @@ function hak_txpimage() {
 			}
 			
 			$out[] = '<div'.$selected.'><div style="padding:'.$margin.'"><img src="'.hu.$preview["path"].'" height="'.$new["height"].'" width="'.$new["width"].'" onclick="window.open(\''.hu.$image["path"].'\',\'mypopup\', \'menubar=0,status=0,height='.$image["height"].',width='.$image["width"].'\')"/></div>'.
-			'<a href="#" '.$onclick.'><img src="images/picture.png" width="18" height="18" alt="'.hak_tinymce_gTxt('insert_image').'" title="'.hak_tinymce_gTxt('insert_image').'" /></a>'.
-			$thumbclick.
-			'</div>';
+                '<a href="#" '.$onclick.'><img src="images/picture.png" width="18" height="18" alt="'.hak_tinymce::mce_gTxt('insert_image').'" title="'.hak_tinymce::mce_gTxt('insert_image').'" /></a>'.
+                $thumbclick.
+                '</div>';
 		}
 		echo implode($out,"\n");
 		exit(0);
@@ -777,7 +593,7 @@ function hak_txpcatselect() {
 	$rs = getTree("root",'image');
 	if ($rs) {
 		echo tag(gTxt('category'),"legend").
-				treeSelectInput("category",$rs,"");
+            treeSelectInput("category",$rs,"");
 	}
 	exit(0);
 }
@@ -785,94 +601,94 @@ function hak_txpcatselect() {
 
 # --- END PLUGIN CODE ---
 if (0) {
-?>
-<!--
-# --- BEGIN PLUGIN HELP ---
-<style type="text/css">dt {font-weight: bold; margin-top:5px;}</style>
+    ?>
+    <!--
+        # --- BEGIN PLUGIN HELP ---
+        <style type="text/css">dt {font-weight: bold; margin-top:5px;}</style>
 
-	<h1>hak_tinymce &#8211; WYSIWYG article editor</h1>
-
-
-	<p>This plugin adds a TinyMCE based WYSIWYG editor to Textpattern.</p>
-
-	<h2>Installation</h2>
-	<ol>
-		<li>Upload the included TinyMCE distribution to somewhere in your document root.   The default location is in your /textpattern/ directory.</li>
-		<li>Install the plugin included in hak_tinymce.txt and activate it. <a href="http://www.textpattern.net/wiki/index.php?title=Intermediate_Weblog_Model#Adding_Plugins_to_Your_Textpattern_Installation">Installing plugins</a></li>
-		<li> Go to <em>Extensions -> hak_tinyme</em> and run the installation.</li>
-		<li>If you placed TinyMCE somewhere other then in /textpattern/ you can set the location now</li>
-	</ol>
-
-	<h2>Behavior</h2>
-	<ul>
-	<li>The editor will not come on by default on blank articles if &#8220;Use Textile&#8221; is selected in the Preferences.  If you want to use the editor all the time change the default to &#8220;Leave text untouched&#8221; </li>
-		<li>If textile is turned on it will be disabled if you toggle the editor on. Conversely if you turn Textile back on it will turn off the editor.</li>
-	</ul>
+                                                                            <h1>hak_tinymce &#8211; WYSIWYG article editor</h1>
 
 
-	<h2>Configuration</h2>
+                                                                                                        <p>This plugin adds a TinyMCE based WYSIWYG editor to Textpattern.</p>
 
-	<p>A hak_tinymce tab is available under <em>extensions</em> with the following options.</p>
+                                                                                                        <h2>Installation</h2>
+                                                                                                        <ol>
+                                                                                                        <li>Upload the included TinyMCE distribution to somewhere in your document root.   The default location is in your /textpattern/ directory.</li>
+                                                                                                        <li>Install the plugin included in hak_tinymce.txt and activate it. <a href="http://www.textpattern.net/wiki/index.php?title=Intermediate_Weblog_Model#Adding_Plugins_to_Your_Textpattern_Installation">Installing plugins</a></li>
+                                                                                                        <li> Go to <em>Extensions -> hak_tinyme</em> and run the installation.</li>
+                                                                                                        <li>If you placed TinyMCE somewhere other then in /textpattern/ you can set the location now</li>
+                                                                                                        </ol>
 
-<dl>
-	<dt>Show editor toggle.</dt>
-	<dd>Determines whether to show the <em>Toggle Editor</em> link. Default is yes. The toggle is automatically hidden if you disable the editor for the article body and the article excerpt below.</dd>
-	<dt>Hide editor toggle when editing articles created with textile or convert linebreaks. </dt>
-	<dd>Determines if the <em>Toggle Editor</em> link should be available when editing articles that where created using textile or convert linebreaks. Default is yes.</dd>
-	<dt>Hide "Use textile" Dropdowns</dt>
-	<dd>Determines if the "Use Textile" Dropdowns should be hidden.  Default is yes.</dd>
-	<dt>Path to tiny_mce script</dt>
-	<dd>The path to the TinyMCE script to use.  Should be either relative to /textpattern/ or to your document root.</dd>
-	<dt>Enable for article body:</dt>
-	<dd>Determines if the editor can be activated for the Article Body.</dd>
-	<dt>Initialization for article body editor:</dt>
-	<dd>The initialization block to use for the article body editor. Configuration documentation can be found on the <a href="http://tinymce.moxiecode.com/documentation.php">tinyMCE site</a>.</dd>
-	<dt>Enable for article excerpt:</dt>
-	<dd>Determines if the editor can be activated for the Article excerpt.</dd>
-	<dt>Initialization for article excerpt editor:</dt>
-	<dd>The initialization block to use for the article excerpt editor. Configuration documentation can be found on the <a href="http://tinymce.moxiecode.com/documentation.php">tinyMCE site</a>.</dd>
-	<dt>Callback functions</dt>
-	<dd>Allows you to add functions that can be used by TinyMCE callbacks.</dd>
-</dl>
-
-	<h2>Uninstall</h2>
-	<p>You also have the option to uninstall the preferences table that is created during installation.  The TinyMCE installation needs to be removed manually.</p>
-
-	<h3>Default initialization string</h3>
-	<p>This new version uses a mostly stock initialization string with a few exceptions.</p>
-
-	<ul>
-		<li><strong>convert_fonts_to_spans</strong> is set to <em>true</em> because we all should try  to use font tags.  This can be overridden in the init blocks.</li>
-		<li>The <em>TXPImage</em> plugin replaces the standard image insert dialog.  This can be overridden in the init blocks.</li>
-		<li><strong>document_base_url</strong> is automatically set to the value of <em>Site URL</em>.  This can be overridden, but should not be necessary.</li>
-		<li><strong>mode</strong> is set to <em>none</em> so that the toggles work.  This cannot be overridden or else the toggles will not work properly</li>
-	</ul>
-
-	<h2>Inserting images with <em>TXPImage</em></h2>
-
-	<p><em>TXPImage</em> is a custom image browsing plugin that integrates into the TXP backend. It allows you to browse your image categories and insert either the thumbnail or full size images for each image.  It is hopefully easy to use.</p>
-
-	<p><img src="data:image/jpeg;base64,R0lGODlhGAAZAPcAAPb3+PT195et0Ziu0e/z94OexneVwpKqzufu9oOdxq6+1uzx94Sfxubu9uzx9Iq/P4Ofxqa20qS205quzpjHTnSzOIehyoSfx5eu0fP3+PH0+PD0+JKpzWWWO+jw9X2Yw+rv85293O3x9oujxIigxuvu8+3y6u7y68DM38ydTsjZ55CnynqWwubv7Iit0pyx0Jm20rbE2nqZtHiVwuju8niXu5C22nqXxPDz92msOFmKMJuxyY+7Xa6+2K3H34efuerw6F2nLu/x84GcxfP19+nw96B3MO3v8Yukye/z+LG/2H+aw3eWupzKUn2dtH6dtO7z9+3w9Jiuz+Xq8neVu8PO37jG2+zu8JTDRJet0Iyx1uru8mKpMHatV4OexHmWw3mZu+zx6efv9eTs6ZSpzPL2+HyXxHuXw5OpyoCcxmqcQbDI3HeUwU2WTW+hRl+QNbrP4aa503yYxfD094zBR57KSebt94WexvD194SexJq83vH1+O/092ulZOrr6uTo3X6aw4ipy5vIR6fPWYKcxoKdyH6axMzb6VSFK+7v76Cz0X2ZxL/L3neTwqa40pOqzoyjtX6bxcDAwP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAAAAAAALAAAAAAYABkAAAj/ACcJHEiwoMGDCBMSlMSwocOHECUJlKgwIUWKFQ9ezIhwo8AqEbJgOCCgpBRGGicOdJQIgMuXDl6knIRxAIA4kJ44AUPIghkkMQp6nPQoA5o/J0wAiUKkBIgVQlUKHFAGQpgdP5jUMPBFTqMlCgYOHbAnUosRfgKoXUsjj1ipkw4kSePhTIBDPOpg6bKmyIW3NAdywCFjzAw8KgQNalIBhhhAgDEqElJowQ0+cB5QoMMlEAIGkQei6MFiChUoPvrkCNLGxefQBMkcMbAghJ4URmxoaWAI9kArEtiIcKOmwxsdiOws8k2QxBUNG+YQmL7lDvOBSiYMKfChQIIEXsJKEcXIcSHc8tfRX4zIHiJ6hQEBADs%3D" alt="Insert Thumbnail" align="middle" /> This icon is used to insert the thumbnail for the image.</p>
-
-	<p><img src="data:image/jpeg;base64,R0lGODlhGAAZAPcAAJiu0PT195mv0JOrz5Srz5Oqz+/z95mv0aa3056655qvz+fu9ubu9oaxbpa04/Hz916Ri5q35ZbIYoa8a/Lz9Ozx93epnu7z98rU42mVounw95PBipiuz3ac1nanS+jw9oa2t6fSc4aytZSz45Gy0Jy45u/099OeU6XQgYa6YJyx0pKqz368V6C86H27UXKcwmaZP+bt98TTrnWBXYqr3vL193+CVcbR4nuvd2OSkJrLZo7EYn6yoHm5TsLZuZfJaenv8o2t4Jl6NKbQgfD198bR44Cj2om8ZPD0+O3y9+zz99GeU12PiOvv8u3x92mYpIC9UYaKQIrBWKnRg8nIm4Om3O/z+Ofv9aDMko/EXe3v8fP09HmpTYyz0JK10e3x9oGlx2idma6FPnyh2cjT5I3BcOvs7LHA2oq6gvD093+0qGKVO3me15i25HOlSZfJZJyw0Ovy93+9UtGubXqqaoeo3ebt9n+1opLBh4a/VfH0+Jyx0ZDFXKG00nyhxGSXPYWNQ/Dz96DLkp/NfIbAV8HcvsDAwP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAAAAAAALAAAAAAYABkAAAj/AA8JHEiwoMGDCBMSNMSwocOHEA0JlKgwIUWKFQ9ezIhwo0AMCBQMGDmygMkCHG4M9HgIgZktAWLKjKkEyJ6VEwcqoDCiixosU1BsCPOiQ5wDOA9hJBDAAQhBIXRI+IHmCRsNSHMqHUigRps7Q97wkUKoDIQxHwQkXUokAo9BWfJAcTGBiZErarUuNVFCBJ4dcnqwwJGhyoK8WxMfInAhgRcLDY6koJPDT53DawcOSNIiAYkZgKLYABOEBgPELAdU4OLBjZATS8TA+LPmdGaBK5wU2i2DyhwfuwvZAXD7UIEvwZMHj0Fc78A+Wh7oQZImkIHrBqw0UVGczBkBAMKLFRcPp0hxjgu1ok+veL3eiPAhuk8YEAA7" alt="Insert Full Image" align="middle" /> This icon is used to insert the full size image.</p>
-
-	<h2>Known issues</h2>
-
-	<ul>
-		<li>This update <strong>requires</strong> version 4.0.2. or higher.</li>
-		<li>Safari and Opera support is still experimental.</li>
-	</ul>
+                                                                                                        <h2>Behavior</h2>
+                                                                                                        <ul>
+                                                                                                        <li>The editor will not come on by default on blank articles if &#8220;Use Textile&#8221; is selected in the Preferences.  If you want to use the editor all the time change the default to &#8220;Leave text untouched&#8221; </li>
+                                                                                                                                                                                                                                                                                                                                             <li>If textile is turned on it will be disabled if you toggle the editor on. Conversely if you turn Textile back on it will turn off the editor.</li>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                </ul>
 
 
-	<h2>Credits</h2>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                <h2>Configuration</h2>
 
-	<p>This is an update of <a href="http://textpattern.org/plugins/320/mictinymce">mic_tinymce</a>, originally developed by <a href="http://micampe.it/">Michele Campeotto</a>.</p>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                <p>A hak_tinymce tab is available under <em>extensions</em> with the following options.</p>
 
-	<p>A lot of the admin code was made possible by examining <a href="http://www.upm-plugins.com">Mary&#8217;s plugins</a>.</p>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                <dl>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                <dt>Show editor toggle.</dt>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                <dd>Determines whether to show the <em>Toggle Editor</em> link. Default is yes. The toggle is automatically hidden if you disable the editor for the article body and the article excerpt below.</dd>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         <dt>Hide editor toggle when editing articles created with textile or convert linebreaks. </dt>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         <dd>Determines if the <em>Toggle Editor</em> link should be available when editing articles that where created using textile or convert linebreaks. Default is yes.</dd>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <dt>Hide "Use textile" Dropdowns</dt>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <dd>Determines if the "Use Textile" Dropdowns should be hidden.  Default is yes.</dd>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <dt>Path to tiny_mce script</dt>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <dd>The path to the TinyMCE script to use.  Should be either relative to /textpattern/ or to your document root.</dd>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <dt>Enable for article body:</dt>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         <dd>Determines if the editor can be activated for the Article Body.</dd>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   <dt>Initialization for article body editor:</dt>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      <dd>The initialization block to use for the article body editor. Configuration documentation can be found on the <a href="http://tinymce.moxiecode.com/documentation.php">tinyMCE site</a>.</dd>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      <dt>Enable for article excerpt:</dt>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 <dd>Determines if the editor can be activated for the Article excerpt.</dd>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           <dt>Initialization for article excerpt editor:</dt>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <dd>The initialization block to use for the article excerpt editor. Configuration documentation can be found on the <a href="http://tinymce.moxiecode.com/documentation.php">tinyMCE site</a>.</dd>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <dt>Callback functions</dt>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <dd>Allows you to add functions that can be used by TinyMCE callbacks.</dd>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              </dl>
 
-	<p>TinyMCE is created and maintained by <a href="http://tinymce.moxiecode.com/">Moxiecode</a> and released under the LGPL.</p>
-# --- END PLUGIN HELP ---
--->
-<?php
-}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <h2>Uninstall</h2>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <p>You also have the option to uninstall the preferences table that is created during installation.  The TinyMCE installation needs to be removed manually.</p>
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <h3>Default initialization string</h3>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <p>This new version uses a mostly stock initialization string with a few exceptions.</p>
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <ul>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <li><strong>convert_fonts_to_spans</strong> is set to <em>true</em> because we all should try  to use font tags.  This can be overridden in the init blocks.</li>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <li>The <em>TXPImage</em> plugin replaces the standard image insert dialog.  This can be overridden in the init blocks.</li>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <li><strong>document_base_url</strong> is automatically set to the value of <em>Site URL</em>.  This can be overridden, but should not be necessary.</li>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <li><strong>mode</strong> is set to <em>none</em> so that the toggles work.  This cannot be overridden or else the toggles will not work properly</li>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 </ul>
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 <h2>Inserting images with <em>TXPImage</em></h2>
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 <p><em>TXPImage</em> is a custom image browsing plugin that integrates into the TXP backend. It allows you to browse your image categories and insert either the thumbnail or full size images for each image.  It is hopefully easy to use.</p>
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             <p><img src="data:image/jpeg;base64,R0lGODlhGAAZAPcAAPb3+PT195et0Ziu0e/z94OexneVwpKqzufu9oOdxq6+1uzx94Sfxubu9uzx9Iq/P4Ofxqa20qS205quzpjHTnSzOIehyoSfx5eu0fP3+PH0+PD0+JKpzWWWO+jw9X2Yw+rv85293O3x9oujxIigxuvu8+3y6u7y68DM38ydTsjZ55CnynqWwubv7Iit0pyx0Jm20rbE2nqZtHiVwuju8niXu5C22nqXxPDz92msOFmKMJuxyY+7Xa6+2K3H34efuerw6F2nLu/x84GcxfP19+nw96B3MO3v8Yukye/z+LG/2H+aw3eWupzKUn2dtH6dtO7z9+3w9Jiuz+Xq8neVu8PO37jG2+zu8JTDRJet0Iyx1uru8mKpMHatV4OexHmWw3mZu+zx6efv9eTs6ZSpzPL2+HyXxHuXw5OpyoCcxmqcQbDI3HeUwU2WTW+hRl+QNbrP4aa503yYxfD094zBR57KSebt94WexvD194SexJq83vH1+O/092ulZOrr6uTo3X6aw4ipy5vIR6fPWYKcxoKdyH6axMzb6VSFK+7v76Cz0X2ZxL/L3neTwqa40pOqzoyjtX6bxcDAwP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAAAAAAALAAAAAAYABkAAAj/ACcJHEiwoMGDCBMSlMSwocOHECUJlKgwIUWKFQ9ezIhwo8AqEbJgOCCgpBRGGicOdJQIgMuXDl6knIRxAIA4kJ44AUPIghkkMQp6nPQoA5o/J0wAiUKkBIgVQlUKHFAGQpgdP5jUMPBFTqMlCgYOHbAnUosRfgKoXUsjj1ipkw4kSePhTIBDPOpg6bKmyIW3NAdywCFjzAw8KgQNalIBhhhAgDEqElJowQ0+cB5QoMMlEAIGkQei6MFiChUoPvrkCNLGxefQBMkcMbAghJ4URmxoaWAI9kArEtiIcKOmwxsdiOws8k2QxBUNG+YQmL7lDvOBSiYMKfChQIIEXsJKEcXIcSHc8tfRX4zIHiJ6hQEBADs%3D" alt="Insert Thumbnail" align="middle" /> This icon is used to insert the thumbnail for the image.</p>
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <p><img src="data:image/jpeg;base64,R0lGODlhGAAZAPcAAJiu0PT195mv0JOrz5Srz5Oqz+/z95mv0aa3056655qvz+fu9ubu9oaxbpa04/Hz916Ri5q35ZbIYoa8a/Lz9Ozx93epnu7z98rU42mVounw95PBipiuz3ac1nanS+jw9oa2t6fSc4aytZSz45Gy0Jy45u/099OeU6XQgYa6YJyx0pKqz368V6C86H27UXKcwmaZP+bt98TTrnWBXYqr3vL193+CVcbR4nuvd2OSkJrLZo7EYn6yoHm5TsLZuZfJaenv8o2t4Jl6NKbQgfD198bR44Cj2om8ZPD0+O3y9+zz99GeU12PiOvv8u3x92mYpIC9UYaKQIrBWKnRg8nIm4Om3O/z+Ofv9aDMko/EXe3v8fP09HmpTYyz0JK10e3x9oGlx2idma6FPnyh2cjT5I3BcOvs7LHA2oq6gvD093+0qGKVO3me15i25HOlSZfJZJyw0Ovy93+9UtGubXqqaoeo3ebt9n+1opLBh4a/VfH0+Jyx0ZDFXKG00nyhxGSXPYWNQ/Dz96DLkp/NfIbAV8HcvsDAwP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAAAAAAALAAAAAAYABkAAAj/AA8JHEiwoMGDCBMSNMSwocOHEA0JlKgwIUWKFQ9ezIhwo0AMCBQMGDmygMkCHG4M9HgIgZktAWLKjKkEyJ6VEwcqoDCiixosU1BsCPOiQ5wDOA9hJBDAAQhBIXRI+IHmCRsNSHMqHUigRps7Q97wkUKoDIQxHwQkXUokAo9BWfJAcTGBiZErarUuNVFCBJ4dcnqwwJGhyoK8WxMfInAhgRcLDY6koJPDT53DawcOSNIiAYkZgKLYABOEBgPELAdU4OLBjZATS8TA+LPmdGaBK5wU2i2DyhwfuwvZAXD7UIEvwZMHj0Fc78A+Wh7oQZImkIHrBqw0UVGczBkBAMKLFRcPp0hxjgu1ok+veL3eiPAhuk8YEAA7" alt="Insert Full Image" align="middle" /> This icon is used to insert the full size image.</p>
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <h2>Known issues</h2>
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <ul>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <li>This update <strong>requires</strong> version 4.0.2. or higher.</li>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <li>Safari and Opera support is still experimental.</li>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </ul>
+
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <h2>Credits</h2>
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <p>This is an update of <a href="http://textpattern.org/plugins/320/mictinymce">mic_tinymce</a>, originally developed by <a href="http://micampe.it/">Michele Campeotto</a>.</p>
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <p>A lot of the admin code was made possible by examining <a href="http://www.upm-plugins.com">Mary&#8217;s plugins</a>.</p>
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <p>TinyMCE is created and maintained by <a href="http://tinymce.moxiecode.com/">Moxiecode</a> and released under the LGPL.</p>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              # --- END PLUGIN HELP ---
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              -->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <?php
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              }
 ?>
