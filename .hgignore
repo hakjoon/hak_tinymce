@@ -1,3 +1,4 @@
 # use glob syntax
 syntax: regexp
-^tiny_mce/
+^dev/
+^.DS_Store
