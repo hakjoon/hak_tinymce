@@ -57,7 +57,7 @@ if (@txpinterface == 'admin') {
 	add_privs('hak_txpimage','1,2,3,4,5,6');
 	add_privs('hak_txpcatselect','1,2,3,4,5,6');
 	
-	register_callback("hak_tinymce::article", "article");
+	register_callback("hak_tinymce::inject_js", "article_ui", "extend_col_1");
 	register_callback("hak_tinymce::js_prep", "hak_tinymce_js");
 	register_callback("hak_tinymce::compressor_js_prep", "hak_tinymce_compressor_js");
 	register_callback("hak_txpimage", "hak_txpimage");
@@ -65,42 +65,51 @@ if (@txpinterface == 'admin') {
 	
 	register_tab('extensions', 'hak_tinymce_prefs', 'hak_tinymce');
 	register_callback('hak_tinymce::prefs', 'hak_tinymce_prefs');
-    register_callback('hak_tinymce::inject_toggle', 'article_ui', 'sidehelp');
+    register_callback('hak_tinymce::inject_toggle', 'article_ui', 'extend_col_1');
+    register_callback('hak_tinymce::override_markup_selects', 'article_ui', 'markup');
 }
 
 class hak_tinymce {
 
     public static function inject_toggle($event, $step, $default, $context_data='') {
-        extract(self::getPrefs());
-    
-        if ($show_toggle  && ($enable_body || $enable_excerpt)) {
+        global $prefs;
+
+        $mcePrefs = self::getPrefs();
+
+        if (!self::show_toggle($context_data, $mcePrefs)) {
+            return;
+        }
+
+        extract($mcePrefs);
+        
+        $msg = '';
+
+        if ($enable_body || $enable_excerpt) {
             $msg = '<h3 class="plain lever"><a href="#hak_tinymce">'.self::mce_gTxt('hak_toggle_editor').'</a></h3>'.
                 '<div id="hak_tinymce" class="toggle" style="display:none">'.
-                '<div><input type="checkbox" value="body" id="hak_bodyToggle" class="checkbox" style="width:auto"" />'.
-                '<label for="hak_bodyToggle">'.ucwords(gTxt('article')).'</label></div>'.
-                '<div><input type="checkbox" value="excerpt" id="hak_excerptToggle" class="checkbox" style="width:auto"" />'.
-                '<label for="hak_excerptToggle">'.ucwords(gTxt('excerpt')).'</label></div>'.
-                '</div>';
+                '<p>';
+            if ($enable_body) {
+                $msg .= '<input type="checkbox" value="body" id="hakToggle-body" class="checkbox" style="width:auto"" />'.
+                    '<label for="hakToggle-body">'.ucwords(gTxt('article')).'</label><br />';
+            }
+            if ($enable_excerpt) {
+                $msg .= '<input type="checkbox" value="excerpt" id="hakToggle-excerpt" class="checkbox" style="width:auto"" />'.
+                    '<label for="hakToggle-excerpt">'.ucwords(gTxt('excerpt')).'</label><br />';
+            }
+             $msg .= '</p></div>';
         }
-        
-        return $msg.$default;
+
+        return $msg;
     }
     
-    public static function article($event, $step) {
+    public static function inject_js($event, $step, $default, $context_data='') {
+        global $prefs;
 
         if (self::check_install()) {
             $hak_tinymce = self::getPrefs();
-            extract(get_prefs());
+            extract($prefs);
             
-            /* if editing an article get ID and fetch use textile settings */
-            if ($step == 'edit') {
-                $hak_ID = (!empty($GLOBALS['ID'])) ? $GLOBALS['ID'] : gps('ID');
-                $hak_ID = assert_int($hak_ID);
-                $rs = safe_row("textile_body, textile_excerpt","textpattern","ID=$hak_ID");
-                extract($rs);
-            } else {
-                extract(gpsa(array('textile_body','textile_excerpt')));
-            }
+            extract($context_data);
             
             /* if this is a new article we use the global use textile setting.  From txp_article */
             if ($step == 'create') {
@@ -116,10 +125,21 @@ class hak_tinymce {
                 }
                 $msg .= "<script language='javascript' type='text/javascript' src='index.php?event=hak_tinymce_js&hak_textile_body=".$textile_body."&hak_textile_excerpt=".$textile_excerpt."'></script>";
                 if (!($step=='edit' && $hak_tinymce["hide_on_textile_edit"] && ($textile_body != 0 && $textile_excerpt != 0))) {
-                    echo $msg;
+                    return $msg;
                 }
             }
         }
+    }
+
+    public static function override_markup_selects($event, $step, $default, $context_data='') {
+        extract(self::getPrefs());
+
+        $empty = ' ';
+        if ($hide_textile_select) {
+            return $empty;
+        }
+
+        return $default;
     }
 
     public static function js_prep() {
@@ -195,7 +215,7 @@ class hak_tinymce {
                                 ).
                          n.graf(self::mce_gTxt('hak_tinymce_path').br.
                                 n.finput('text','hak_tinymce_path',$tinymce_path,'','','',60,'','hak_tinymce_path').
-                                hak_file_exists($tinymce_path)
+                                self::file_exists($tinymce_path)
                                 ).
                          n.graf(self::mce_gTxt('enable_body').br.
                                 n.yesnoRadio('hak_enable_body',$enable_body)
@@ -216,7 +236,7 @@ class hak_tinymce {
                                 ).
                          n.graf(self::mce_gTxt('use_compressor').br.
                                 n.yesnoRadio('hak_use_compressor',$use_compressor).
-                                hak_file_exists(hak_compressor_path($tinymce_path), "compressor_not_found")
+                                self::file_exists(hak_compressor_path($tinymce_path), "compressor_not_found")
                                 ).
                          n.graf(self::mce_gTxt('hak_tinymce_compressor_init').br.
                                 tag(tag("(".self::mce_gTxt('compressor_line_end').")","em"),"small").
@@ -287,7 +307,8 @@ class hak_tinymce {
                     var addControl = function (opts) {
                         tinyMCE.settings = settings[opts.id];
                         tinyMCE.execCommand('mceAddControl', false, opts.id);
-                        opts.checkbox.checked = true;
+                        var checkbox = $('#hakToggle-' + opts.id);
+                        checkbox.attr('checked', true);
                         var select = $('#markup-' + opts.id);
                         originalMarkupSelect[opts.id] = select.val();
                         select.val(0);
@@ -296,7 +317,8 @@ class hak_tinymce {
                     var removeControl = function (opts) {
                         tinyMCE.settings = settings[opts.id];
                         tinyMCE.execCommand('mceRemoveControl', false, opts.id);
-                        opts.checkbox.checked = false;
+                        var checkbox = $('#hakToggle-' + opts.id);
+                        checkbox.attr('checked', false);
                         var select = $('#markup-' + opts.id);
                         select.val(originalMarkupSelect[opts.id]);
                     };
@@ -308,23 +330,29 @@ class hak_tinymce {
                             var id = $(this).val();
                             var mceControl = tinyMCE.get(id);
                             if (!!mceControl) {
-                                removeControl({
-                                    id:id,
-                                            checkbox:this
-                                            });
+                                removeControl({id:id});
                             } else {
-                                addControl({
-                                    id:id, 
-                                            checkbox:this
-                                            });
+                                addControl({id:id});
                             }
-                        }
+                        },
+                     addEditor:function(id) {
+                            addControl({id:id});
+                        }, 
+                     removeEditor:function(id) {
+                            removeControl({id:id});
+                        } 
                     }
                     
                 })();
 
         $(document).ready(function () {
                 $("#hak_tinymce input.checkbox").click(hak_tinymce.toggleEditor);
+                $('#markup-body, #markup-excerpt').each(function (i) {
+                        var id = $(this).attr('id').split('-')[1];
+                        if (parseInt($(this).val(),10) === 0) {
+                            hak_tinymce.addEditor(id);
+                        }
+                    });
             });
 
 EOF;
@@ -352,7 +380,29 @@ EOF;
         extract( gpsa(array('from_view', 'view')));
         return (empty($from_view) || $view == 'text');
     }
+    
+    private function show_toggle($context_data, $mcePrefs) {
 
+        if (!$mcePrefs["show_toggle"]) {
+            return false;
+        }
+
+        if (empty($context_data)) {
+            return true;
+        }
+
+        if ($mcePrefs["hide_on_textile_edit"]) {
+            if (!empty($context_data["textile_body"]) && $context_data["textile_body"] != CONVERT_LINEBREAKS) {
+                return false;
+            }
+            
+            if (!empty($context_data["textile_excerpt"]) && $context_data["textile_excerpt"] != CONVERT_LINEBREAKS) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
     private function mce_gTxt($what) {
         global $language;
 	
@@ -504,17 +554,20 @@ EOF;
             }
         } // -- End 0.7 upgrade
     }
+
+
+    private function file_exists($file, $message = "file_not_found") {
+        global $path_to_site;
+        $out = '';
+        if (!file_exists($file) && !file_exists($path_to_site.$file)) {
+            $out = br.n.tag(self::mce_gTxt($message),"span",' style="color:red"');
+        }
+        return $out;
+}
 } //--- End Class
 
 //----------------------------------------
-function hak_file_exists($file, $message = "file_not_found") {
-	global $path_to_site;
-	$out = '';
-	if (!file_exists($file) && !file_exists($path_to_site.$file)) {
-		$out = br.n.tag(self::mce_gTxt($message),"span",' style="color:red"');
-	}
-	return $out;
-}
+
 //----------------------------------------
 function hak_compressor_path($file) {
 	$path = str_replace('tiny_mce.js','tiny_mce_gzip.js',$file);
