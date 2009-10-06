@@ -57,7 +57,7 @@ if (@txpinterface == 'admin') {
 	add_privs('hak_txpimage','1,2,3,4,5,6');
 	add_privs('hak_txpcatselect','1,2,3,4,5,6');
 	
-	register_callback("hak_tinymce::inject_js", "article_ui", "extend_col_1");
+
 	register_callback("hak_tinymce::js_prep", "hak_tinymce_js");
 	register_callback("hak_tinymce::compressor_js_prep", "hak_tinymce_compressor_js");
 	register_callback("hak_txpimage", "hak_txpimage");
@@ -66,13 +66,14 @@ if (@txpinterface == 'admin') {
 	register_tab('extensions', 'hak_tinymce_prefs', 'hak_tinymce');
 	register_callback('hak_tinymce::prefs', 'hak_tinymce_prefs');
     register_callback('hak_tinymce::inject_toggle', 'article_ui', 'extend_col_1');
+	register_callback("hak_tinymce::inject_js", "article_ui", "extend_col_1");
     register_callback('hak_tinymce::override_markup_selects', 'article_ui', 'markup');
+    register_callback('hak_tinymce::track_markup_selection', 'article_ui', 'view');
 }
 
 class hak_tinymce {
 
     public static function inject_toggle($event, $step, $default, $context_data='') {
-        global $prefs;
 
         $mcePrefs = self::getPrefs();
 
@@ -89,11 +90,11 @@ class hak_tinymce {
                 '<div id="hak_tinymce" class="toggle" style="display:none">'.
                 '<p>';
             if ($enable_body) {
-                $msg .= '<input type="checkbox" value="body" id="hakToggle-body" class="checkbox" style="width:auto"" />'.
+                $msg .= '<input type="checkbox" value="body" id="hakToggle-body" name="hak_tinymceToggle[]" class="checkbox" style="width:auto" '.self::isToggleChecked('body', $context_data).'" />'.
                     '<label for="hakToggle-body">'.ucwords(gTxt('article')).'</label><br />';
             }
             if ($enable_excerpt) {
-                $msg .= '<input type="checkbox" value="excerpt" id="hakToggle-excerpt" class="checkbox" style="width:auto"" />'.
+                $msg .= '<input type="checkbox" value="excerpt" id="hakToggle-excerpt" name="hak_tinymceToggle[]" class="checkbox" style="width:auto" '.self::isToggleChecked('excerpt', $context_data).' />'.
                     '<label for="hakToggle-excerpt">'.ucwords(gTxt('excerpt')).'</label><br />';
             }
              $msg .= '</p></div>';
@@ -116,7 +117,7 @@ class hak_tinymce {
                 $textile_body = $use_textile;
                 $textile_excerpt = $use_textile;
             }
-            
+
             if (self::is_edit_screen()) {
                 $hak_tinymce["script_path"] = ($hak_tinymce["use_compressor"]) ? hak_compressor_path($hak_tinymce["tinymce_path"]) : $hak_tinymce["tinymce_path"];
                 $msg = "<script language='javascript' type='text/javascript' src='".$hak_tinymce["script_path"]."'></script>";
@@ -140,6 +141,23 @@ class hak_tinymce {
         }
 
         return $default;
+    }
+
+    public static function track_markup_selection($event, $step, $default, $context_data) {
+        
+        $toggles = gps("hak_tinymceToggle");
+        
+        if (self::is_edit_screen() || empty($toggles)) {
+            return $default;
+        }
+        
+        foreach ($toggles as $toggle) {
+            $default .= hInput("hak_tinymceToggle[]", $toggle);
+        }
+
+        return $default;
+
+
     }
 
     public static function js_prep() {
@@ -346,12 +364,9 @@ class hak_tinymce {
                 })();
 
         $(document).ready(function () {
-                $("#hak_tinymce input.checkbox").click(hak_tinymce.toggleEditor);
-                $('#markup-body, #markup-excerpt').each(function (i) {
-                        var id = $(this).attr('id').split('-')[1];
-                        if (parseInt($(this).val(),10) === 0) {
-                            hak_tinymce.addEditor(id);
-                        }
+                $("#hak_tinymce input:checkbox").click(hak_tinymce.toggleEditor);
+                $("#hak_tinymce input:checked").each(function (i) {
+                        hak_tinymce.addEditor($(this).val());
                     });
             });
 
@@ -377,10 +392,32 @@ EOF;
  
     //--support functions 
     private function is_edit_screen() {
-        extract( gpsa(array('from_view', 'view')));
-        return (empty($from_view) || $view == 'text');
+        $views = gpsa(array('from_view', 'view'));
+
+        extract($views);
+        return ($view == 'text' || empty($from_view));
+    }
+
+    private function isToggleChecked($toggle, $context) {
+        global $prefs;
+        
+        $which_textile = "textile_".$toggle;
+        $textile_setting = empty($context[$which_textile]) ? $prefs["use_textile"] : $context[$which_textile];
+
+        $msg = '';
+        if (self::wasToggleChecked($toggle) || $textile_setting == LEAVE_TEXT_UNTOUCHED) {
+            $msg = 'checked="checked"';
+        }
+
+        return $msg;
     }
     
+    private function wasToggleChecked($toggle) {
+        
+        $toggles_array = gps("hak_tinymceToggle");
+        return empty($toggles_array) ? false : in_array($toggle, $toggles_array);
+    }
+
     private function show_toggle($context_data, $mcePrefs) {
 
         if (!$mcePrefs["show_toggle"]) {
@@ -391,12 +428,13 @@ EOF;
             return true;
         }
 
-        if ($mcePrefs["hide_on_textile_edit"]) {
-            if (!empty($context_data["textile_body"]) && $context_data["textile_body"] != CONVERT_LINEBREAKS) {
+        if ($mcePrefs["hide_on_textile_edit"] && !empty($context_data["ID"])) {
+            
+            if (!empty($context_data["textile_body"]) && $context_data["textile_body"] != LEAVE_TEXT_UNTOUCHED) {
                 return false;
             }
-            
-            if (!empty($context_data["textile_excerpt"]) && $context_data["textile_excerpt"] != CONVERT_LINEBREAKS) {
+
+            if (!empty($context_data["textile_excerpt"]) && $context_data["textile_excerpt"] != LEAVE_TEXT_UNTOUCHED) {
                 return false;
             }
         }
