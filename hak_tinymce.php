@@ -124,7 +124,7 @@ class hak_tinymce {
                 if ($hak_tinymce["use_compressor"]) {
                     $msg .= "<script language='javascript' type='text/javascript' src='index.php?event=hak_tinymce_compressor_js'></script>";
                 }
-                $msg .= "<script language='javascript' type='text/javascript' src='index.php?event=hak_tinymce_js&hak_textile_body=".$textile_body."&hak_textile_excerpt=".$textile_excerpt."'></script>";
+                $msg .= "<script language='javascript' type='text/javascript' src='index.php?event=hak_tinymce_js'></script>";
                 if (!($step=='edit' && $hak_tinymce["hide_on_textile_edit"] && ($textile_body != 0 && $textile_excerpt != 0))) {
                     return $msg;
                 }
