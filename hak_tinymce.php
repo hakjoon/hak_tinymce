@@ -17,7 +17,7 @@ $plugin['name'] = 'hak_tinymce';
 // 1 = Plugin help is in raw HTML.  Not recommended.
 # $plugin['allow_html_help'] = 1;
 
-$plugin['version'] = '0.7.4';
+$plugin['version'] = '0.9';
 $plugin['author'] = 'Patrick Woods';
 $plugin['author_uri'] = 'http://www.hakjoon.com/';
 $plugin['description'] = 'A TinyMCE based WYSIWYG editor';

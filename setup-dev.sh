@@ -16,9 +16,8 @@ echo "copying distro folder to dev root"
 cp -r $DISTRO_DIR $DEV_DIR
 echo "copying compressor to dev dir"
 cp $COMPRESSOR_DIR/tiny_mce_gzip.* $DEV_DIR/$TINYMCE_DIR
-echo "copying txpimage into tinymce directory"
-cp -r $TXPIMAGE_DIR $DEV_PLUGIN_DIR
-echo "symlink php script in dev folder"
-#cd $DEV_DIR
+echo "symlnk txpimage into tinymce plugins directory"
+ln -s $TXPIMAGE_DIR $DEV_PLUGIN_DIR/txpimage
+echo "symlink php script into dev folder"
 ln -s $CURRENT_DIR/hak_tinymce.php $DEV_DIR/hak_tinymce.php
-#cd ..
+
