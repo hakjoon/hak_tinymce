@@ -434,7 +434,7 @@ EOF;
 
         if ($mcePrefs["hide_on_textile_edit"] && !empty($context_data["ID"])) {
             
-            if (!empty($context_data['textile_'.$textarea]) && $context_data['textile_'.$textarea] != LEAVE_TEXT_UNTOUCHED) {
+            if (!empty($context_data['textile_'.$textarea]) && !empty($context_data[ucwords($textarea)]) && $context_data['textile_'.$textarea] != LEAVE_TEXT_UNTOUCHED) {
                 return false;
             }
         }
