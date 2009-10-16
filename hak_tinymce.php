@@ -17,7 +17,7 @@ $plugin['name'] = 'hak_tinymce';
 // 1 = Plugin help is in raw HTML.  Not recommended.
 # $plugin['allow_html_help'] = 1;
 
-$plugin['version'] = '0.9';
+$plugin['version'] = '0.9.1';
 $plugin['author'] = 'Patrick Woods';
 $plugin['author_uri'] = 'http://www.hakjoon.com/';
 $plugin['description'] = 'A TinyMCE based WYSIWYG editor';
@@ -75,29 +75,27 @@ class hak_tinymce {
 
     public static function inject_toggle($event, $step, $default, $context_data='') {
 
-        $mcePrefs = self::getPrefs();
+        extract(self::getPrefs());
 
-        if (!self::show_toggle($context_data, $mcePrefs)) {
+        if (!self::show_toggle($context_data)) {
             return;
         }
 
-        extract($mcePrefs);
-        
         $msg = '';
 
         if ($enable_body || $enable_excerpt) {
             $msg = '<h3 class="plain lever"><a href="#hak_tinymce">'.self::mce_gTxt('hak_toggle_editor').'</a></h3>'.
                 '<div id="hak_tinymce" class="toggle" style="display:none">'.
                 '<p>';
-            if ($enable_body) {
+            if ($enable_body && self::showCheckbox('body', $context_data)) {
                 $msg .= '<input type="checkbox" value="body" id="hakToggle-body" name="hak_tinymceToggle[]" class="checkbox" style="width:auto" '.self::isToggleChecked('body', $context_data).'" />'.
                     '<label for="hakToggle-body">'.ucwords(gTxt('article')).'</label><br />';
             }
-            if ($enable_excerpt) {
+            if ($enable_excerpt && self::showCheckbox('excerpt',$context_data)) {
                 $msg .= '<input type="checkbox" value="excerpt" id="hakToggle-excerpt" name="hak_tinymceToggle[]" class="checkbox" style="width:auto" '.self::isToggleChecked('excerpt', $context_data).' />'.
                     '<label for="hakToggle-excerpt">'.ucwords(gTxt('excerpt')).'</label><br />';
             }
-             $msg .= '</p></div>';
+            $msg .= '</p></div>';
         }
 
         return $msg;
@@ -118,17 +116,17 @@ class hak_tinymce {
                 $textile_excerpt = $use_textile;
             }
 
-            if (self::is_edit_screen()) {
-                $hak_tinymce["script_path"] = ($hak_tinymce["use_compressor"]) ? hak_compressor_path($hak_tinymce["tinymce_path"]) : $hak_tinymce["tinymce_path"];
-                $msg = "<script language='javascript' type='text/javascript' src='".$hak_tinymce["script_path"]."'></script>";
-                if ($hak_tinymce["use_compressor"]) {
-                    $msg .= "<script language='javascript' type='text/javascript' src='index.php?event=hak_tinymce_compressor_js'></script>";
-                }
-                $msg .= "<script language='javascript' type='text/javascript' src='index.php?event=hak_tinymce_js'></script>";
-                if (!($step=='edit' && $hak_tinymce["hide_on_textile_edit"] && ($textile_body != 0 && $textile_excerpt != 0))) {
-                    return $msg;
-                }
+
+            $hak_tinymce["script_path"] = ($hak_tinymce["use_compressor"]) ? hak_compressor_path($hak_tinymce["tinymce_path"]) : $hak_tinymce["tinymce_path"];
+            $msg = "<script language='javascript' type='text/javascript' src='".$hak_tinymce["script_path"]."'></script>";
+            if ($hak_tinymce["use_compressor"]) {
+                $msg .= "<script language='javascript' type='text/javascript' src='index.php?event=hak_tinymce_compressor_js'></script>";
             }
+            $msg .= "<script language='javascript' type='text/javascript' src='index.php?event=hak_tinymce_js'></script>";
+            if (self::show_toggle($context_data)) {
+                return $msg;
+            }
+
         }
     }
 
@@ -286,7 +284,7 @@ class hak_tinymce {
         }
     }
 
- // Private functions
+    // Private functions
     private function compressor_js() {
         extract(self::getPrefs());
         
@@ -353,10 +351,10 @@ class hak_tinymce {
                                 addControl({id:id});
                             }
                         },
-                     addEditor:function(id) {
+                            addEditor:function(id) {
                             addControl({id:id});
                         }, 
-                     removeEditor:function(id) {
+                            removeEditor:function(id) {
                             removeControl({id:id});
                         } 
                     }
@@ -392,23 +390,22 @@ EOF;
  
     //--support functions 
     private function is_edit_screen() {
-        $views = gpsa(array('from_view', 'view'));
+        $views = gpsa(array('from_view', 'view', 'step'));
 
         extract($views);
-        return ($view == 'text' || empty($from_view));
+        return ($step == 'edit' || $view == 'text' || empty($from_view));
     }
 
     private function isToggleChecked($toggle, $context) {
         global $prefs;
         
         $which_textile = "textile_".$toggle;
-        $textile_setting = empty($context[$which_textile]) ? $prefs["use_textile"] : $context[$which_textile];
+        $textile_setting = !is_numeric($context[$which_textile]) ? $prefs["use_textile"] : $context[$which_textile];
 
         $msg = '';
         if (self::wasToggleChecked($toggle) || $textile_setting == LEAVE_TEXT_UNTOUCHED) {
             $msg = 'checked="checked"';
         }
-
         return $msg;
     }
     
@@ -418,8 +415,9 @@ EOF;
         return empty($toggles_array) ? false : in_array($toggle, $toggles_array);
     }
 
-    private function show_toggle($context_data, $mcePrefs) {
-
+    private function show_toggle($context_data) {
+        global $mcePrefs;
+        
         if (!$mcePrefs["show_toggle"]) {
             return false;
         }
@@ -428,13 +426,15 @@ EOF;
             return true;
         }
 
+        return self::showCheckbox('body', $context_data) || self::showCheckbox('excerpt', $context_data);
+    }
+
+    private function showCheckbox($textarea, $context_data) {
+        global $mcePrefs;
+
         if ($mcePrefs["hide_on_textile_edit"] && !empty($context_data["ID"])) {
             
-            if (!empty($context_data["textile_body"]) && $context_data["textile_body"] != LEAVE_TEXT_UNTOUCHED) {
-                return false;
-            }
-
-            if (!empty($context_data["textile_excerpt"]) && $context_data["textile_excerpt"] != LEAVE_TEXT_UNTOUCHED) {
+            if (!empty($context_data['textile_'.$textarea]) && $context_data['textile_'.$textarea] != LEAVE_TEXT_UNTOUCHED) {
                 return false;
             }
         }
@@ -601,7 +601,7 @@ EOF;
             $out = br.n.tag(self::mce_gTxt($message),"span",' style="color:red"');
         }
         return $out;
-}
+    }
 } //--- End Class
 
 //----------------------------------------
