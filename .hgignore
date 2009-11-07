@@ -1,4 +1,5 @@
 # use glob syntax
+.DS_Store
+
 syntax: regexp
 ^dev/
-^.DS_Store

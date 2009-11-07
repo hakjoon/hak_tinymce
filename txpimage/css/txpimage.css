@@ -2,7 +2,7 @@
 .mceActionPanel {margin-top:7px;}
 .alignPreview {border:1px solid #000; width:140px; height:140px; overflow:hidden; padding:5px;}
 .checkbox {border:0;}
-.panel_wrapper div.current {height:305px;}
+.panel_wrapper div.current {height:auto;}
 #prev {margin:0; border:1px solid #000; width:428px; height:150px; overflow:auto;}
 #align, #classlist {width:150px;}
 #width, #height {vertical-align:middle; width:50px; text-align:center;}
@@ -11,3 +11,64 @@
 input {width: 280px;}
 #constrain, #onmousemovecheck {width:auto;}
 #id, #dir, #lang, #usemap, #longdesc {width:200px;}
+
+
+/* My Stuff */
+
+#image_browse {
+	height:220px;
+	overflow:auto;
+	border:1px solid #ccc;
+	margin-bottom:3%;
+	margin-top:3px;
+	/* width:412px; */
+	padding:6px 0;
+}
+
+#catselect {
+	border-color:#ccc;
+}
+
+#catselect select {
+	margin:5px;
+}
+
+#image_browse div {
+	padding-bottom:3px;
+	border:1px solid silver;
+	float:left;
+	margin:10px;
+}
+
+#image_browse div.active {
+	background:#F3F5A2;
+}
+
+#image_browse div div {
+	float:none;
+	border:none;
+}
+
+#image_browse div div img {
+	display:block;
+	cursor: -moz-zoom-in !important;
+	cursor:help;
+}
+
+#image_browse #loading {
+	margin:20% 0 0 40%;
+}
+
+#image_browse div a:link,#image_browse div a:visited,#image_browse div a:active {
+	border:0;
+	text-align:left;
+	background:white;
+	padding:2px;
+}
+
+#image_browse div a img {
+	border:0;
+	border:1px solid silver;
+	background:white;
+}
+

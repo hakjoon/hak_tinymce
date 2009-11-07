@@ -441,7 +441,7 @@ EOF;
         return true;
     }
     
-    private function mce_gTxt($what) {
+    public function mce_gTxt($what) {
         global $language;
 	
         $en_us = array(
@@ -602,6 +602,12 @@ EOF;
         }
         return $out;
     }
+
+    public function map_attribs($arr) {
+        $format = '{src:"%s", width:%s, height:%s, alt:"%s", title:"%s"}';
+        $out = sprintf($format, $arr["path"], $arr["width"], $arr["height"],$arr["alt"], $arr["caption"] );
+        return $out;
+    }
 } //--- End Class
 
 //----------------------------------------
@@ -620,6 +626,7 @@ function hak_txpimage() {
 	$category = (!empty($category)) ? "and category='".$category."'" : "";
 	$rs = safe_rows_start("*", "txp_image","1=1 ".$category." order by category,name");
 	$src = gps("src");
+
 	
 	if ($rs) {
 		$out = array();
@@ -627,26 +634,26 @@ function hak_txpimage() {
 			extract($a);
 			$selected ='';
 			$thumbclick ='';
-			$image["path"] = $img_dir.'/'.$id.$ext;
+			$image["path"] = hu.$img_dir.'/'.$id.$ext;
 			$image["width"] = $w;
 			$image["height"] = $h;
 			$image["alt"] = (empty($alt)) ? "" : rawurlencode($alt);
 			$image["caption"] = (empty($caption)) ? "" : rawurlencode($caption);
-			$onclick = 'onclick=\'insertImage(this,"'.$image["path"].'","'.$image["width"].'","'.$image["height"].'","'.$image["alt"].'","'.$image["caption"].'");return'.n.'false;\'';
+			$onclick = 'onclick=\'TxpImageDialog.insertImage(this,'.hak_tinymce::map_attribs($image).');return'.n.'false;\'';
 			
 			$preview = $image;
 			$thumb = $image;
 			
 			if($thumbnail) {
-				$thumb["path"] = $img_dir.'/'.$id.'t'.$ext;
+				$thumb["path"] = hu.$img_dir.'/'.$id.'t'.$ext;
 				$props = @getimagesize($path_to_site.'/'.$thumb["path"]);
 				$thumb["width"] = ($props[0]) ? $props[0] : "";
 				$thumb["height"] = ($props[1]) ? $props[1] : "";
 				$thumb["alt"] = $image["alt"];
 				$thumb["caption"] = $image["caption"];
 				$preview = $thumb;
-				$thumbclick = 'onclick=\'insertImage(this,"'.$thumb["path"].'","'.$thumb["width"].'","'.$thumb["height"].'","'.$thumb["alt"].'","'.$image["caption"].'");return'.n.'false;\'';
-				$thumbclick = 	'<a href="#" '.$thumbclick.'><img src="images/pictures.png" width="18" height="18" title="'.hak_tinymce::mce_gTxt('insert_thumb').'" alt="'.hak_tinymce::mce_gTxt('insert_thumb').'" /></a>';
+				$thumbclick = 'onclick=\'TxpImageDialog.insertImage(this,'.hak_tinymce::map_attribs($thumb).');return'.n.'false;\'';
+				$thumbclick = 	'<a href="#" '.$thumbclick.'><img src="img/pictures.png" width="18" height="18" title="'.hak_tinymce::mce_gTxt('insert_thumb').'" alt="'.hak_tinymce::mce_gTxt('insert_thumb').'" /></a>';
 			}
 			
 			//$desiredheight = $preview["height"];
@@ -670,8 +677,8 @@ function hak_txpimage() {
 				$margin = "0 ".intval($margin)."px";
 			}
 			
-			$out[] = '<div'.$selected.'><div style="padding:'.$margin.'"><img src="'.hu.$preview["path"].'" height="'.$new["height"].'" width="'.$new["width"].'" onclick="window.open(\''.hu.$image["path"].'\',\'mypopup\', \'menubar=0,status=0,height='.$image["height"].',width='.$image["width"].'\')"/></div>'.
-                '<a href="#" '.$onclick.'><img src="images/picture.png" width="18" height="18" alt="'.hak_tinymce::mce_gTxt('insert_image').'" title="'.hak_tinymce::mce_gTxt('insert_image').'" /></a>'.
+			$out[] = '<div'.$selected.'><div style="padding:'.$margin.'"><img src="'.$preview["path"].'" height="'.$new["height"].'" width="'.$new["width"].'" onclick="window.open(\''.hu.$image["path"].'\',\'mypopup\', \'menubar=0,status=0,height='.$image["height"].',width='.$image["width"].'\')"/></div>'.
+                '<a href="#" '.$onclick.'><img src="img/picture.png" width="18" height="18" alt="'.hak_tinymce::mce_gTxt('insert_image').'" title="'.hak_tinymce::mce_gTxt('insert_image').'" /></a>'.
                 $thumbclick.
                 '</div>';
 		}
@@ -684,7 +691,7 @@ function hak_txpcatselect() {
 	$rs = getTree("root",'image');
 	if ($rs) {
 		echo tag(gTxt('category'),"legend").
-            treeSelectInput("category",$rs,"");
+            treeSelectInput("category",$rs,"","txpCategory");
 	}
 	exit(0);
 }
