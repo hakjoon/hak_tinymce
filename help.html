@@ -1,0 +1,84 @@
+<style type="text/css">dt {font-weight: bold; margin-top:5px;}</style>
+
+<h1>hak_tinymce &#8211; WYSIWYG article editor</h1>
+
+
+<p>This plugin adds a TinyMCE based WYSIWYG editor to Textpattern.</p>
+
+<h2>Installation</h2>
+<ol>
+  <li>Upload the included TinyMCE distribution to somewhere in your document root.   The default location is in your /textpattern/ directory.</li>
+  <li>Install the plugin included in hak_tinymce.txt and activate it. <a href="http://www.textpattern.net/wiki/index.php?title=Intermediate_Weblog_Model#Adding_Plugins_to_Your_Textpattern_Installation">Installing plugins</a></li>
+  <li> Go to <em>Extensions -> hak_tinyme</em> and run the installation.</li>
+  <li>If you placed TinyMCE somewhere other then in /textpattern/ you can set the location now</li>
+</ol>
+
+<h2>Behavior</h2>
+<ul>
+  <li>The editor will not come on by default on blank articles if &#8220;Use Textile&#8221; is selected in the Preferences.  If you want to use the editor all the time change the default to &#8220;Leave text untouched&#8221; </li>
+  <li>If textile is turned on it will be disabled if you toggle the editor on. Conversely if you turn Textile back on it will turn off the editor.</li>
+</ul>
+
+
+<h2>Configuration</h2>
+
+<p>A hak_tinymce tab is available under <em>extensions</em> with the following options.</p>
+
+<dl>
+  <dt>Show editor toggle.</dt>
+  <dd>Determines whether to show the <em>Toggle Editor</em> link. Default is yes. The toggle is automatically hidden if you disable the editor for the article body and the article excerpt below.</dd>
+  <dt>Hide editor toggle when editing articles created with textile or convert linebreaks. </dt>
+  <dd>Determines if the <em>Toggle Editor</em> link should be available when editing articles that where created using textile or convert linebreaks. Default is yes.</dd>
+  <dt>Hide "Use textile" Dropdowns</dt>
+  <dd>Determines if the "Use Textile" Dropdowns should be hidden.  Default is yes.</dd>
+  <dt>Path to tiny_mce script</dt>
+  <dd>The path to the TinyMCE script to use.  Should be either relative to /textpattern/ or to your document root.</dd>
+  <dt>Enable for article body:</dt>
+  <dd>Determines if the editor can be activated for the Article Body.</dd>
+  <dt>Initialization for article body editor:</dt>
+  <dd>The initialization block to use for the article body editor. Configuration documentation can be found on the <a href="http://tinymce.moxiecode.com/documentation.php">tinyMCE site</a>.</dd>
+  <dt>Enable for article excerpt:</dt>
+  <dd>Determines if the editor can be activated for the Article excerpt.</dd>
+  <dt>Initialization for article excerpt editor:</dt>
+  <dd>The initialization block to use for the article excerpt editor. Configuration documentation can be found on the <a href="http://tinymce.moxiecode.com/documentation.php">tinyMCE site</a>.</dd>
+  <dt>Callback functions</dt>
+  <dd>Allows you to add functions that can be used by TinyMCE callbacks.</dd>
+</dl>
+
+<h2>Uninstall</h2>
+<p>You also have the option to uninstall the preferences table that is created during installation.  The TinyMCE installation needs to be removed manually.</p>
+
+<h3>Default initialization string</h3>
+<p>This new version uses a mostly stock initialization string with a few exceptions.</p>
+
+<ul>
+  <li><strong>convert_fonts_to_spans</strong> is set to <em>true</em> because we all should try  to use font tags.  This can be overridden in the init blocks.</li>
+  <li>The <em>TXPImage</em> plugin replaces the standard image insert dialog.  This can be overridden in the init blocks.</li>
+  <li><strong>document_base_url</strong> is automatically set to the value of <em>Site URL</em>.  This can be overridden, but should not be necessary.</li>
+  <li><strong>mode</strong> is set to <em>none</em> so that the toggles work.  This cannot be overridden or else the toggles will not work properly</li>
+</ul>
+
+<h2>Inserting images with <em>TXPImage</em></h2>
+
+<p><em>TXPImage</em> is a custom image browsing plugin that integrates into the TXP backend. It allows you to browse your image categories and insert either the thumbnail or full size images for each image.  It is hopefully easy to use.</p>
+
+<p><img src="data:image/jpeg;base64,R0lGODlhGAAZAPcAAPb3+PT195et0Ziu0e/z94OexneVwpKqzufu9oOdxq6+1uzx94Sfxubu9uzx9Iq/P4Ofxqa20qS205quzpjHTnSzOIehyoSfx5eu0fP3+PH0+PD0+JKpzWWWO+jw9X2Yw+rv85293O3x9oujxIigxuvu8+3y6u7y68DM38ydTsjZ55CnynqWwubv7Iit0pyx0Jm20rbE2nqZtHiVwuju8niXu5C22nqXxPDz92msOFmKMJuxyY+7Xa6+2K3H34efuerw6F2nLu/x84GcxfP19+nw96B3MO3v8Yukye/z+LG/2H+aw3eWupzKUn2dtH6dtO7z9+3w9Jiuz+Xq8neVu8PO37jG2+zu8JTDRJet0Iyx1uru8mKpMHatV4OexHmWw3mZu+zx6efv9eTs6ZSpzPL2+HyXxHuXw5OpyoCcxmqcQbDI3HeUwU2WTW+hRl+QNbrP4aa503yYxfD094zBR57KSebt94WexvD194SexJq83vH1+O/092ulZOrr6uTo3X6aw4ipy5vIR6fPWYKcxoKdyH6axMzb6VSFK+7v76Cz0X2ZxL/L3neTwqa40pOqzoyjtX6bxcDAwP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAAAAAAALAAAAAAYABkAAAj/ACcJHEiwoMGDCBMSlMSwocOHECUJlKgwIUWKFQ9ezIhwo8AqEbJgOCCgpBRGGicOdJQIgMuXDl6knIRxAIA4kJ44AUPIghkkMQp6nPQoA5o/J0wAiUKkBIgVQlUKHFAGQpgdP5jUMPBFTqMlCgYOHbAnUosRfgKoXUsjj1ipkw4kSePhTIBDPOpg6bKmyIW3NAdywCFjzAw8KgQNalIBhhhAgDEqElJowQ0+cB5QoMMlEAIGkQei6MFiChUoPvrkCNLGxefQBMkcMbAghJ4URmxoaWAI9kArEtiIcKOmwxsdiOws8k2QxBUNG+YQmL7lDvOBSiYMKfChQIIEXsJKEcXIcSHc8tfRX4zIHiJ6hQEBADs%3D" alt="Insert Thumbnail" align="middle" /> This icon is used to insert the thumbnail for the image.</p>
+
+<p><img src="data:image/jpeg;base64,R0lGODlhGAAZAPcAAJiu0PT195mv0JOrz5Srz5Oqz+/z95mv0aa3056655qvz+fu9ubu9oaxbpa04/Hz916Ri5q35ZbIYoa8a/Lz9Ozx93epnu7z98rU42mVounw95PBipiuz3ac1nanS+jw9oa2t6fSc4aytZSz45Gy0Jy45u/099OeU6XQgYa6YJyx0pKqz368V6C86H27UXKcwmaZP+bt98TTrnWBXYqr3vL193+CVcbR4nuvd2OSkJrLZo7EYn6yoHm5TsLZuZfJaenv8o2t4Jl6NKbQgfD198bR44Cj2om8ZPD0+O3y9+zz99GeU12PiOvv8u3x92mYpIC9UYaKQIrBWKnRg8nIm4Om3O/z+Ofv9aDMko/EXe3v8fP09HmpTYyz0JK10e3x9oGlx2idma6FPnyh2cjT5I3BcOvs7LHA2oq6gvD093+0qGKVO3me15i25HOlSZfJZJyw0Ovy93+9UtGubXqqaoeo3ebt9n+1opLBh4a/VfH0+Jyx0ZDFXKG00nyhxGSXPYWNQ/Dz96DLkp/NfIbAV8HcvsDAwP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAAAAAAALAAAAAAYABkAAAj/AA8JHEiwoMGDCBMSNMSwocOHEA0JlKgwIUWKFQ9ezIhwo0AMCBQMGDmygMkCHG4M9HgIgZktAWLKjKkEyJ6VEwcqoDCiixosU1BsCPOiQ5wDOA9hJBDAAQhBIXRI+IHmCRsNSHMqHUigRps7Q97wkUKoDIQxHwQkXUokAo9BWfJAcTGBiZErarUuNVFCBJ4dcnqwwJGhyoK8WxMfInAhgRcLDY6koJPDT53DawcOSNIiAYkZgKLYABOEBgPELAdU4OLBjZATS8TA+LPmdGaBK5wU2i2DyhwfuwvZAXD7UIEvwZMHj0Fc78A+Wh7oQZImkIHrBqw0UVGczBkBAMKLFRcPp0hxjgu1ok+veL3eiPAhuk8YEAA7" alt="Insert Full Image" align="middle" /> This icon is used to insert the full size image.</p>
+
+<h2>Known issues</h2>
+
+<ul>
+  <li>This update <strong>requires</strong> version 4.0.2. or higher.</li>
+  <li>Safari and Opera support is still experimental.</li>
+</ul>
+
+
+<h2>Credits</h2>
+
+<p>This is an update of <a href="http://textpattern.org/plugins/320/mictinymce">mic_tinymce</a>, originally developed by <a href="http://micampe.it/">Michele Campeotto</a>.</p>
+
+<p>A lot of the admin code was made possible by examining <a href="http://www.upm-plugins.com">Mary&#8217;s plugins</a>.</p>
+
+<p>TinyMCE is created and maintained by <a href="http://tinymce.moxiecode.com/">Moxiecode</a> and released under the LGPL.</p>
+

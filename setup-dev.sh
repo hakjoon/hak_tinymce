@@ -1,5 +1,6 @@
 #!/bin/bash
 
+NAME="hak_tinymce"
 CURRENT_DIR=$(pwd)
 DEV_DIR="$CURRENT_DIR/dev"
 TINYMCE_DIR="tiny_mce"
@@ -18,6 +19,7 @@ echo "copying compressor to dev dir"
 cp $COMPRESSOR_DIR/tiny_mce_gzip.* $DEV_DIR/$TINYMCE_DIR
 echo "symlnk txpimage into tinymce plugins directory"
 ln -s $TXPIMAGE_DIR $DEV_PLUGIN_DIR/txpimage
-echo "symlink php script into dev folder"
-ln -s $CURRENT_DIR/hak_tinymce.php $DEV_DIR/hak_tinymce.php
-
+echo "create dev script in dev folder"
+cpp -DDEV -P plugin.php $DEV_DIR/$NAME.php
+echo "syminking code include"
+ln -s $CURRENT_DIR/code.php $DEV_DIR/code.php

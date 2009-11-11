@@ -21,7 +21,8 @@ cp $COMPRESSOR_DIR/tiny_mce_gzip.* $DIST_DIR/$TINYMCE_DIR
 echo "copying txpimage into tinymce directory"
 cp -r $TXPIMAGE_DIR $DEV_PLUGIN_DIR
 echo "create distribution"
-cp $NAME.php $TPL_DIR
+sed -e 's/<?php//' -e 's/?>//' code.php > code-clean.php
+cpp -P plugin.php  $TPL_DIR/$NAME.php
 cd $TPL_DIR
 php $NAME.php > $NAME.txt
 mv $NAME.txt $CURRENT_DIR/$DIST_DIR
@@ -30,3 +31,4 @@ cd $CURRENT_DIR
 cp install.txt $DIST_DIR
 zip -r $NAME.zip $DIST_DIR
 rm -r $DIST_DIR
+rm code-clean.php
