@@ -635,7 +635,6 @@ function hak_txpimage() {
 		$out = array();
 		while ($a = nextRow($rs)) {
 			extract($a);
-			$selected ='';
 			$thumbclick ='';
 			$image["path"] = hu.$img_dir.'/'.$id.$ext;
 			$image["width"] = $w;
@@ -679,8 +678,8 @@ function hak_txpimage() {
 				$margin = (100 - $new["width"]) / 2;
 				$margin = "0 ".intval($margin)."px";
 			}
-			
-			$out[] = '<div'.$selected.'><div style="padding:'.$margin.'"><img src="'.$preview["path"].'" height="'.$new["height"].'" width="'.$new["width"].'" onclick="window.open(\''.hu.$image["path"].'\',\'mypopup\', \'menubar=0,status=0,height='.$image["height"].',width='.$image["width"].'\')"/></div>'.
+			$selected = ($src == $image["path"] || $src == $thumb["path"]) ? "active" : "";
+			$out[] = '<div class="image '.$selected.'"><div style="padding:'.$margin.'"><img src="'.$preview["path"].'" height="'.$new["height"].'" width="'.$new["width"].'" onclick="window.open(\''.hu.$image["path"].'\',\'mypopup\', \'menubar=0,status=0,height='.$image["height"].',width='.$image["width"].'\')"/></div>'.
                 '<a href="#" '.$onclick.'><img src="img/picture.png" width="18" height="18" alt="'.hak_tinymce::mce_gTxt('insert_image').'" title="'.hak_tinymce::mce_gTxt('insert_image').'" /></a>'.
                 $thumbclick.
                 '</div>';

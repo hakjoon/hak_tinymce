@@ -472,7 +472,7 @@ var TxpImageDialog = {
     },
     loadImageBrowser: function (category) {
 	var selCat = category || "";
-	var src = tinyMCEPopup.dom.getAttrib('src', 'value','');
+	var src = tinyMCEPopup.dom.get('src').value || '';
 	
 	tinymce.util.XHR.send({
 	    url:this.txpEndPoint + '?event=hak_txpimage&src='+ src + '&c='+ selCat,
@@ -489,8 +489,9 @@ var TxpImageDialog = {
 	    v = (tinymce.inArray(needDecode, k) !== -1) ? decodeURI(v) : v;
 	    nl[k].value = v;
 	    tinyMCEPopup.dom.setAttrib(k, 'value', v);
-	    
 	});
+	tinyMCEPopup.dom.removeClass(tinyMCEPopup.dom.select("div.image"), 'active');
+	tinyMCEPopup.dom.addClass(tinyMCEPopup.dom.getParent(obj, "div.image"), "active");
     }
 
 };

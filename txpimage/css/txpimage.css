@@ -33,7 +33,7 @@ input {width: 280px;}
 	margin:5px;
 }
 
-#image_browse div {
+#image_browse div.image {
 	padding-bottom:3px;
 	border:1px solid silver;
 	float:left;
@@ -42,6 +42,7 @@ input {width: 280px;}
 
 #image_browse div.active {
 	background:#F3F5A2;
+	border-color:red;
 }
 
 #image_browse div div {
