@@ -26,24 +26,39 @@ function extract_section($lines, $section) {
 
 }
 
+function read_file($file) {
+    $content = file($file);
+    
+	for ($i=0; $i < count($content); $i++) {
+		$content[$i] = rtrim($content[$i]);
+	}
+
+    return $content;
+}
+
 function compile_plugin($file='') {
 	global $plugin;
 
 	if (empty($file))
 		$file = $_SERVER['SCRIPT_FILENAME'];
-
+    
 	if (!isset($plugin['name'])) {
 		$plugin['name'] = basename($file, '.php');
 	}
 
 	# Read the contents of this file, and strip line ends
-	$content = file($file);
-	for ($i=0; $i < count($content); $i++) {
-		$content[$i] = rtrim($content[$i]);
-	}
+    $content = read_file($file);
 
-	$plugin['help'] = extract_section($content, 'HELP');
-	$plugin['code'] = extract_section($content, 'CODE');
+    $plugin['help'] = trim(extract_section($content, 'HELP'));
+    $plugin['code'] = extract_section($content, 'CODE');
+
+    if (isset($plugin['help_file'])) {
+        $plugin_content =  read_file($plugin['help_file']);
+        $plugin['help'] = trim(extract_section($plugin_content, 'HELP'));
+    }
+
+    // textpattern will textile it, and encode html
+    $plugin['help_raw'] = $plugin['help'];
 
 	@include('classTextile.php');
 	if (class_exists('Textile')) {

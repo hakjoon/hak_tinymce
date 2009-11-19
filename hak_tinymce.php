@@ -1,4 +1,55 @@
 <?php
+// This is a PLUGIN TEMPLATE.
+
+// Copy this file to a new name like abc_myplugin.php.  Edit the code, then
+// run this file at the command line to produce a plugin for distribution:
+// $ php abc_myplugin.php > abc_myplugin-0.1.txt
+
+// Plugin name is optional.  If unset, it will be extracted from the current
+// file name. Plugin names should start with a three letter prefix which is
+// unique and reserved for each plugin author ("abc" is just an example).
+// Uncomment and edit this line to override:
+$plugin['name'] = 'hak_tinymce';
+
+$plugin['version'] = '0.9.1';
+// Allow raw HTML help, as opposed to Textile.
+// 0 = Plugin help is in Textile format, no raw HTML allowed (default).
+// 1 = Plugin help is in raw HTML.  Not recommended.
+$plugin['allow_html_help'] = 1;
+$plugin['help_file'] = 'help.html';
+
+$plugin['author'] = 'Patrick Woods';
+$plugin['author_uri'] = 'http://www.hakjoon.com/';
+$plugin['description'] = 'A TinyMCE based WYSIWYG editor';
+
+// Plugin load order:
+// The default value of 5 would fit most plugins, while for instance comment
+// spam evaluators or URL redirectors would probably want to run earlier
+// (1...4) to prepare the environment for everything else that follows.
+// Values 6...9 should be considered for plugins which would work late.
+// This order is user-overrideable.
+$plugin['order'] = '5';
+
+// Plugin 'type' defines where the plugin is loaded
+// 0 = public       : only on the public side of the website (default)
+// 1 = public+admin : on both the public and admin side
+// 2 = library      : only when include_plugin() or require_plugin() is called
+// 3 = admin        : only on the admin side
+$plugin['type'] = '1';
+
+// Plugin "flags" signal the presence of optional capabilities to the core plugin loader.
+// Use an appropriately OR-ed combination of these flags.
+// The four high-order bits 0xf000 are available for this plugin's private use
+if (!defined('PLUGIN_HAS_PREFS')) define('PLUGIN_HAS_PREFS', 0x0001); // This plugin wants to receive "plugin_prefs.{$plugin['name']}" events
+if (!defined('PLUGIN_LIFECYCLE_NOTIFY')) define('PLUGIN_LIFECYCLE_NOTIFY', 0x0002); // This plugin wants to receive "plugin_lifecycle.{$plugin['name']}" events
+
+$plugin['flags'] = '0';
+
+if (!defined('txpinterface'))
+    @include_once('zem_tpl.php');
+
+# --- BEGIN PLUGIN CODE ---
+
 if (@txpinterface == 'admin') {
     add_privs('article','1,2,3,4,5,6');
 	add_privs('hak_tinymce_prefs', '1,2');
@@ -60,7 +111,7 @@ class hak_tinymce {
             
             extract($context_data);
             
-            /* if this is a new article we use the global use textile setting.  From txp_article */
+            
             if ($step == 'create') {
                 $textile_body = $use_textile;
                 $textile_excerpt = $use_textile;
@@ -515,7 +566,6 @@ EOF;
 		return true;
     }
     private function upgrade($installedversion) {
-        global $plugin;
 
         if ($installedversion < '0.7') {
             
@@ -540,12 +590,11 @@ EOF;
         } // -- End 0.7 upgrade
 
         // Generic version updater
-        dmp($plugin);
-        self::update_version($plugin["version"]);
+        self::update_version("0.9.1");
     }
     
     private function update_version($version) {
-        safe_upsert('txp_hak_tinymce', "pref_value = '$version'", "pref_name = 'version'");
+        safe_upsert('txp_hak_tinymce', "pref_value = '".$version."'", "pref_name = 'version'");
     }
 
     private function file_exists($file, $message = "file_not_found") {
@@ -650,4 +699,16 @@ function hak_txpcatselect() {
 	exit(0);
 }
 
+
+
+# --- END PLUGIN CODE ---
+if (0) {
+    ?>
+    <!--
+# --- BEGIN PLUGIN HELP ---
+       
+# --- END PLUGIN HELP ---
+        -->
+<?php
+        }
 ?>

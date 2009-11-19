@@ -9,6 +9,7 @@ DISTRO_DIR="$CURRENT_DIR/tinymce-distro/jscripts/$TINYMCE_DIR"
 COMPRESSOR_DIR="$CURRENT_DIR/tinymce_compressor_php"
 DEV_PLUGIN_DIR="$DIST_DIR/$TINYMCE_DIR/plugins"
 TXPIMAGE_DIR="$CURRENT_DIR/txpimage"
+HELP_FILE="help.html"
 
 echo "removing old dist folder "
 rm -r $DIST_DIR
@@ -21,14 +22,14 @@ cp $COMPRESSOR_DIR/tiny_mce_gzip.* $DIST_DIR/$TINYMCE_DIR
 echo "copying txpimage into tinymce directory"
 cp -r $TXPIMAGE_DIR $DEV_PLUGIN_DIR
 echo "create distribution"
-sed -e 's/<?php//' -e 's/?>//' code.php > code-clean.php
-cpp -P plugin.php  $TPL_DIR/$NAME.php
+cp $NAME.php  $TPL_DIR
+cp $HELP_FILE $TPL_DIR
 cd $TPL_DIR
 php $NAME.php > $NAME.txt
 mv $NAME.txt $CURRENT_DIR/$DIST_DIR
 rm $NAME.php
+rm $HELP_FILE
 cd $CURRENT_DIR
 cp install.txt $DIST_DIR
 zip -r $NAME.zip $DIST_DIR
 rm -r $DIST_DIR
-rm code-clean.php

@@ -19,7 +19,5 @@ echo "copying compressor to dev dir"
 cp $COMPRESSOR_DIR/tiny_mce_gzip.* $DEV_DIR/$TINYMCE_DIR
 echo "symlnk txpimage into tinymce plugins directory"
 ln -s $TXPIMAGE_DIR $DEV_PLUGIN_DIR/txpimage
-echo "create dev script in dev folder"
-cpp -DDEV -P plugin.php $DEV_DIR/$NAME.php
-echo "syminking code include"
-ln -s $CURRENT_DIR/code.php $DEV_DIR/code.php
+echo "syminking plugin file in dev dir"
+ln -s $CURRENT_DIR/$NAME.php $DEV_DIR/$NAME.php
