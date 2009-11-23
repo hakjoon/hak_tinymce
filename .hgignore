@@ -1,5 +1,6 @@
 # use glob syntax
 .DS_Store
+.zip
 
 syntax: regexp
 ^dev/

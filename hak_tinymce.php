@@ -11,7 +11,7 @@
 // Uncomment and edit this line to override:
 $plugin['name'] = 'hak_tinymce';
 
-$plugin['version'] = '0.9.1';
+$plugin['version'] = '0.9.2';
 // Allow raw HTML help, as opposed to Textile.
 // 0 = Plugin help is in Textile format, no raw HTML allowed (default).
 // 1 = Plugin help is in raw HTML.  Not recommended.
@@ -607,9 +607,13 @@ EOF;
     }
 
     public function map_attribs($arr) {
-        $format = '{src:"%s", width:%s, height:%s, alt:"%s", title:"%s"}';
-        $out = sprintf($format, $arr["path"], $arr["width"], $arr["height"],$arr["alt"], $arr["caption"] );
-        return $out;
+        $format = '{src:"'.$arr["path"].'"';
+        $format .= (!empty($arr["width"])) ? ',width:'.$arr["width"] : '';
+        $format .= (!empty($arr["height"])) ? ',height:'.$arr["height"] : '';
+        $format .= (!empty($arr["alt"])) ? ',alt:"'.$arr["alt"] : '"';
+        $format .= (!empty($arr["title"])) ? ',title:"'.$arr["title"] : '"';
+        $format .= '}';
+        return $format;
     }
 } //--- End Class
 
@@ -679,7 +683,7 @@ function hak_txpimage() {
 				$margin = "0 ".intval($margin)."px";
 			}
 			$selected = ($src == $image["path"] || $src == $thumb["path"]) ? "active" : "";
-			$out[] = '<div class="image '.$selected.'"><div style="padding:'.$margin.'"><img src="'.$preview["path"].'" height="'.$new["height"].'" width="'.$new["width"].'" onclick="window.open(\''.hu.$image["path"].'\',\'mypopup\', \'menubar=0,status=0,height='.$image["height"].',width='.$image["width"].'\')"/></div>'.
+			$out[] = '<div class="image '.$selected.'"><div style="padding:'.$margin.'"><img src="'.$preview["path"].'" height="'.$new["height"].'" width="'.$new["width"].'" onclick="window.open(\''.$image["path"].'\',\'mypopup\', \'menubar=0,status=0,height='.$image["height"].',width='.$image["width"].'\')"/></div>'.
                 '<a href="#" '.$onclick.'><img src="img/picture.png" width="18" height="18" alt="'.hak_tinymce::mce_gTxt('insert_image').'" title="'.hak_tinymce::mce_gTxt('insert_image').'" /></a>'.
                 $thumbclick.
                 '</div>';
