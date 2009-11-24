@@ -11,7 +11,7 @@
 // Uncomment and edit this line to override:
 $plugin['name'] = 'hak_tinymce';
 
-$plugin['version'] = '0.9.3';
+$plugin['version'] = '0.9.4';
 // Allow raw HTML help, as opposed to Textile.
 // 0 = Plugin help is in Textile format, no raw HTML allowed (default).
 // 1 = Plugin help is in raw HTML.  Not recommended.
@@ -590,7 +590,7 @@ EOF;
         } // -- End 0.7 upgrade
 
         // Generic version updater
-        self::update_version("0.9.3");
+        self::update_version("0.9.4");
     }
     
     private function update_version($version) {
@@ -610,8 +610,8 @@ EOF;
         $format = '{src:"'.$arr["path"].'"';
         $format .= (!empty($arr["width"])) ? ',width:'.$arr["width"] : '';
         $format .= (!empty($arr["height"])) ? ',height:'.$arr["height"] : '';
-        $format .= (!empty($arr["alt"])) ? ',alt:"'.$arr["alt"] : '"';
-        $format .= (!empty($arr["title"])) ? ',title:"'.$arr["title"] : '"';
+        $format .= (!empty($arr["alt"])) ? ',alt:"'.$arr["alt"].'"' : '';
+        $format .= (!empty($arr["title"])) ? ',title:"'.$arr["title"].'"' : '';
         $format .= '}';
         return $format;
     }
