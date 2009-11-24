@@ -11,7 +11,7 @@
 // Uncomment and edit this line to override:
 $plugin['name'] = 'hak_tinymce';
 
-$plugin['version'] = '0.9.4';
+$plugin['version'] = '0.9.5';
 // Allow raw HTML help, as opposed to Textile.
 // 0 = Plugin help is in Textile format, no raw HTML allowed (default).
 // 1 = Plugin help is in raw HTML.  Not recommended.
@@ -590,7 +590,7 @@ EOF;
         } // -- End 0.7 upgrade
 
         // Generic version updater
-        self::update_version("0.9.4");
+        self::update_version("0.9.5");
     }
     
     private function update_version($version) {
@@ -652,9 +652,8 @@ function hak_txpimage() {
 			
 			if($thumbnail) {
 				$thumb["path"] = hu.$img_dir.'/'.$id.'t'.$ext;
-				$props = @getimagesize($path_to_site.'/'.$thumb["path"]);
-				$thumb["width"] = ($props[0]) ? $props[0] : "";
-				$thumb["height"] = ($props[1]) ? $props[1] : "";
+				$thumb["width"] = $thumb_w;
+				$thumb["height"] = $thumb_h;
 				$thumb["alt"] = $image["alt"];
 				$thumb["caption"] = $image["caption"];
 				$preview = $thumb;
