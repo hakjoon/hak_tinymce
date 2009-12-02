@@ -11,7 +11,7 @@
 // Uncomment and edit this line to override:
 $plugin['name'] = 'hak_tinymce';
 
-$plugin['version'] = '0.9.5';
+$plugin['version'] = '0.9.6';
 // Allow raw HTML help, as opposed to Textile.
 // 0 = Plugin help is in Textile format, no raw HTML allowed (default).
 // 1 = Plugin help is in raw HTML.  Not recommended.
@@ -136,7 +136,7 @@ class hak_tinymce {
 
         $empty = ' ';
         if ($hide_textile_select) {
-            return $empty;
+            return tag($default, 'div', ' style="display:none"');
         }
 
         return $default;
@@ -590,7 +590,7 @@ EOF;
         } // -- End 0.7 upgrade
 
         // Generic version updater
-        self::update_version("0.9.5");
+        self::update_version("0.9.6");
     }
     
     private function update_version($version) {
