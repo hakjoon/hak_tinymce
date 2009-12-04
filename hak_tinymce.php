@@ -11,7 +11,7 @@
 // Uncomment and edit this line to override:
 $plugin['name'] = 'hak_tinymce';
 
-$plugin['version'] = '0.9.6';
+$plugin['version'] = '0.9.7';
 // Allow raw HTML help, as opposed to Textile.
 // 0 = Plugin help is in Textile format, no raw HTML allowed (default).
 // 1 = Plugin help is in raw HTML.  Not recommended.
@@ -59,17 +59,17 @@ if (@txpinterface == 'admin') {
 	add_privs('hak_txpcatselect','1,2,3,4,5,6');
 	
 
-	register_callback("hak_tinymce::js_prep", "hak_tinymce_js");
-	register_callback("hak_tinymce::compressor_js_prep", "hak_tinymce_compressor_js");
-	register_callback("hak_txpimage", "hak_txpimage");
-	register_callback("hak_txpcatselect", "hak_txpcatselect");
+	register_callback(array("hak_tinymce","js_prep"), "hak_tinymce_js");
+	register_callback(array("hak_tinymce","compressor_js_prep"), "hak_tinymce_compressor_js");
+    register_callback("hak_txpimage", "hak_txpimage");
+    register_callback("hak_txpcatselect", "hak_txpcatselect");
 	
-	register_tab('extensions', 'hak_tinymce_prefs', 'hak_tinymce');
-	register_callback('hak_tinymce::prefs', 'hak_tinymce_prefs');
-    register_callback('hak_tinymce::inject_toggle', 'article_ui', 'extend_col_1');
-	register_callback("hak_tinymce::inject_js", "article_ui", "extend_col_1");
-    register_callback('hak_tinymce::override_markup_selects', 'article_ui', 'markup');
-    register_callback('hak_tinymce::track_markup_selection', 'article_ui', 'view');
+    register_tab('extensions', 'hak_tinymce_prefs', 'hak_tinymce');
+    register_callback(array('hak_tinymce','prefs'), 'hak_tinymce_prefs');
+    register_callback(array('hak_tinymce','inject_toggle'), 'article_ui', 'extend_col_1');
+    register_callback(array("hak_tinymce","inject_js"), "article_ui", "extend_col_1");
+    register_callback(array('hak_tinymce','override_markup_selects'), 'article_ui', 'markup');
+    register_callback(array('hak_tinymce','track_markup_selection'), 'article_ui', 'view');
 }
 
 class hak_tinymce {
@@ -124,7 +124,7 @@ class hak_tinymce {
                 $msg .= "<script language='javascript' type='text/javascript' src='index.php?event=hak_tinymce_compressor_js'></script>";
             }
             $msg .= "<script language='javascript' type='text/javascript' src='index.php?event=hak_tinymce_js'></script>";
-            if (self::show_toggle($context_data)) {
+            if ($hak_tinymce["enable_excerpt"] || $hak_tinymce["enable_body"]) {
                 return $msg;
             }
 
@@ -302,23 +302,38 @@ class hak_tinymce {
         $js = <<<EOF
             
             var hak_tinymce = (function () {
+
+                    var settings = {};
                     
-                    var settings = {
-                    body:{
+EOF;
+		if ($enable_body) {
+                    $js .= <<<EOF
+                        settings.body = {
                         document_base_url:"$hu",
                         $body_init
                         mode: "none",
                         elements:"body"
-                    },
-                    excerpt: {
+                    };
+                    
+EOF;
+        }
+        if ($enable_excerpt) {
+                    $js .= <<<EOF
+                        settings.excerpt = {
                         document_base_url:"$hu",
                         $excerpt_init
                         mode:"none",
                         elements: "excerpt"
-                    }
                     };
-                    tinyMCE.init(settings.body);
-                    tinyMCE.init(settings.excerpt);
+                    
+EOF;
+        }
+
+        $js .= $callbacks.n;
+        $js .= ($enable_body) ? 'tinyMCE.init(settings.body);'.n : '';
+        $js .= ($enable_excerpt) ? 'tinyMCE.init(settings.excerpt);'.n : '';
+
+        $js .= <<<EOF
                     var textileMap = [2,0,1];
         
                     var addControl = function (opts) {
@@ -361,15 +376,21 @@ class hak_tinymce {
                     }
                     
                 })();
-
-        $(document).ready(function () {
-                $("#hak_tinymce input:checkbox").click(hak_tinymce.toggleEditor);
-                $("#hak_tinymce input:checked").each(function (i) {
-                        hak_tinymce.addEditor($(this).val());
-                    });
-            });
-
+        
 EOF;
+
+$js .= '$(document).ready(function () {'.n.
+    t.t.'$("#hak_tinymce input:checkbox").click(hak_tinymce.toggleEditor);'.n;
+if ($show_toggle) {
+              $js .=  t.t.'$("#hak_tinymce input:checked").each(function (i) {'.n.
+                        t.t.t.'hak_tinymce.addEditor($(this).val());'.n.
+                  t.t.' });'.n;
+} else {
+    $js .= ($enable_body) ? t.t.'hak_tinymce.addEditor("body");'.n : '';
+    $js .= ($enable_excerpt) ? t.t.'hak_tinymce.addEditor("excerpt");'.n : '';
+}
+$js .= t.' });';
+
 		return $js;
     }
    
