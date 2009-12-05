@@ -455,7 +455,7 @@ var TxpImageDialog = {
 	}
     },
     // Load image categories
-    txpEndPoint: tinyMCEPopup.editor.documentBaseURI.toAbsolute('/textpattern/index.php'),
+    txpEndPoint: tinyMCEPopup.editor.documentBaseURI.toAbsolute('textpattern/index.php'),
     prepareCategories: function () {
 	tinymce.util.XHR.send({
 	    url:this.txpEndPoint + '?event=hak_txpcatselect',
