@@ -11,7 +11,7 @@
 // Uncomment and edit this line to override:
 $plugin['name'] = 'hak_tinymce';
 
-$plugin['version'] = '0.9.7';
+$plugin['version'] = '0.9.8';
 // Allow raw HTML help, as opposed to Textile.
 // 0 = Plugin help is in Textile format, no raw HTML allowed (default).
 // 1 = Plugin help is in raw HTML.  Not recommended.
@@ -553,7 +553,8 @@ $js .= t.' });';
 			$hak_mceSettings_default .= "theme_advanced_buttons3 : \"\",\n";
 			$hak_mceSettings_default .= "theme_advanced_toolbar_location : \"top\",\n";
 			$hak_mceSettings_default .= "theme_advanced_toolbar_align : \"left\",";
-			
+			$hak_mceSettings_default .= "entity_encoding : \"numeric\",";			
+
 			$hak_mceSettings_compressor = "theme : \"advanced\",\n";
 			$hak_mceSettings_compressor .= "plugins : \"searchreplace,txpimage\",\n";
 			$hak_mceSettings_compressor .= "disk_cache : true,\n";
@@ -611,7 +612,7 @@ $js .= t.' });';
         } // -- End 0.7 upgrade
 
         // Generic version updater
-        self::update_version("0.9.6");
+        self::update_version("0.9.8");
     }
     
     private function update_version($version) {
