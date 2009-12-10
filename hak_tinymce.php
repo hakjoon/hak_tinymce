@@ -11,7 +11,7 @@
 // Uncomment and edit this line to override:
 $plugin['name'] = 'hak_tinymce';
 
-$plugin['version'] = '0.9.8';
+$plugin['version'] = '0.9.9';
 // Allow raw HTML help, as opposed to Textile.
 // 0 = Plugin help is in Textile format, no raw HTML allowed (default).
 // 1 = Plugin help is in raw HTML.  Not recommended.
@@ -74,26 +74,26 @@ if (@txpinterface == 'admin') {
 
 class hak_tinymce {
     
-    public static function inject_toggle($event, $step, $default, $context_data='') {
+     function inject_toggle($event, $step, $default, $context_data='') {
 
-        extract(self::getPrefs());
+        extract(hak_tinymce::getPrefs());
 
-        if (!self::show_toggle($context_data)) {
+        if (!hak_tinymce::show_toggle($context_data)) {
             return;
         }
 
         $msg = '';
 
         if ($enable_body || $enable_excerpt) {
-            $msg = '<h3 class="plain lever"><a href="#hak_tinymce">'.self::mce_gTxt('hak_toggle_editor').'</a></h3>'.
+            $msg = '<h3 class="plain lever"><a href="#hak_tinymce">'.hak_tinymce::mce_gTxt('hak_toggle_editor').'</a></h3>'.
                 '<div id="hak_tinymce" class="toggle" style="display:none">'.
                 '<p>';
-            if ($enable_body && self::showCheckbox('body', $context_data)) {
-                $msg .= '<input type="checkbox" value="body" id="hakToggle-body" name="hak_tinymceToggle[]" class="checkbox" style="width:auto" '.self::isToggleChecked('body', $context_data).'" />'.
+            if ($enable_body && hak_tinymce::showCheckbox('body', $context_data)) {
+                $msg .= '<input type="checkbox" value="body" id="hakToggle-body" name="hak_tinymceToggle[]" class="checkbox" style="width:auto" '.hak_tinymce::isToggleChecked('body', $context_data).'" />'.
                     '<label for="hakToggle-body">'.ucwords(gTxt('article')).'</label><br />';
             }
-            if ($enable_excerpt && self::showCheckbox('excerpt',$context_data)) {
-                $msg .= '<input type="checkbox" value="excerpt" id="hakToggle-excerpt" name="hak_tinymceToggle[]" class="checkbox" style="width:auto" '.self::isToggleChecked('excerpt', $context_data).' />'.
+            if ($enable_excerpt && hak_tinymce::showCheckbox('excerpt',$context_data)) {
+                $msg .= '<input type="checkbox" value="excerpt" id="hakToggle-excerpt" name="hak_tinymceToggle[]" class="checkbox" style="width:auto" '.hak_tinymce::isToggleChecked('excerpt', $context_data).' />'.
                     '<label for="hakToggle-excerpt">'.ucwords(gTxt('excerpt')).'</label><br />';
             }
             $msg .= '</p></div>';
@@ -102,11 +102,11 @@ class hak_tinymce {
         return $msg;
     }
     
-    public static function inject_js($event, $step, $default, $context_data='') {
+     function inject_js($event, $step, $default, $context_data='') {
         global $prefs;
 
-        if (self::check_install()) {
-            $hak_tinymce = self::getPrefs();
+        if (hak_tinymce::check_install()) {
+            $hak_tinymce = hak_tinymce::getPrefs();
             extract($prefs);
             
             extract($context_data);
@@ -131,8 +131,8 @@ class hak_tinymce {
         }
     }
 
-    public static function override_markup_selects($event, $step, $default, $context_data='') {
-        extract(self::getPrefs());
+     function override_markup_selects($event, $step, $default, $context_data='') {
+        extract(hak_tinymce::getPrefs());
 
         $empty = ' ';
         if ($hide_textile_select) {
@@ -142,11 +142,11 @@ class hak_tinymce {
         return $default;
     }
 
-    public static function track_markup_selection($event, $step, $default, $context_data) {
+     function track_markup_selection($event, $step, $default, $context_data) {
         
         $toggles = gps("hak_tinymceToggle");
         
-        if (self::is_edit_screen() || empty($toggles)) {
+        if (hak_tinymce::is_edit_screen() || empty($toggles)) {
             return $default;
         }
         
@@ -159,24 +159,24 @@ class hak_tinymce {
 
     }
 
-    public static function js_prep() {
+     function js_prep() {
         header('Content-type: application/x-javascript');
-        echo self::js();
+        echo hak_tinymce::js();
         exit(0);
     }
 
-    public static function compressor_js_prep() {
+     function compressor_js_prep() {
         header('Content-type: application/x-javascript');
-        echo self::compressor_js();
+        echo hak_tinymce::compressor_js();
         exit(0);
     }
 
-    public static function prefs($event, $step) {
+     function prefs($event, $step) {
         pagetop('hak_tinymce '.gTxt('preferences'), ($step == 'update' ? gTxt('preferences_saved') : ''));
 	
         if ($step == 'install') {
             // Install the preferences table.
-            self::install();
+            hak_tinymce::install();
         }
 	
         if ($step == 'uninstall') {
@@ -212,70 +212,70 @@ class hak_tinymce {
             safe_update('txp_hak_tinymce', "pref_value = '$hak_tinymce_compressor_init'", "pref_name = 'compressor_init'");
         }
 
-        if (self::check_install()) {
-            extract(self::getPrefs());
+        if (hak_tinymce::check_install()) {
+            extract(hak_tinymce::getPrefs());
             echo n.t.'<div style="margin: auto; width:40%;">'.
                 n.t.t.hed('hak_tinymce '.gTxt('Preferences'), '1').
                 n.n.form(
                          n.eInput('hak_tinymce_prefs').
                          n.sInput('update').
                          n.fInput('submit', 'update', 'Update', 'smallerbox').
-                         n.graf(self::mce_gTxt('hak_show_toggle').br.
+                         n.graf(hak_tinymce::mce_gTxt('hak_show_toggle').br.
                                 n.yesnoRadio('hak_show_toggle',$show_toggle).br.
-                                n.tag(tag(self::mce_gTxt('auto_disable'),"em"),"small")
+                                n.tag(tag(hak_tinymce::mce_gTxt('auto_disable'),"em"),"small")
                                 ).
-                         n.graf(self::mce_gTxt('hak_hide_on_textile_edit').br.
+                         n.graf(hak_tinymce::mce_gTxt('hak_hide_on_textile_edit').br.
                                 n.yesnoRadio('hak_hide_on_textile_edit',$hide_on_textile_edit)
                                 ).
-                         n.graf(self::mce_gTxt('hak_hide_textile_select').br.
+                         n.graf(hak_tinymce::mce_gTxt('hak_hide_textile_select').br.
                                 n.yesnoRadio('hak_hide_textile_select',$hide_textile_select)
                                 ).
-                         n.graf(self::mce_gTxt('hak_tinymce_path').br.
+                         n.graf(hak_tinymce::mce_gTxt('hak_tinymce_path').br.
                                 n.finput('text','hak_tinymce_path',$tinymce_path,'','','',60,'','hak_tinymce_path').
-                                self::file_exists($tinymce_path)
+                                hak_tinymce::file_exists($tinymce_path)
                                 ).
-                         n.graf(self::mce_gTxt('enable_body').br.
+                         n.graf(hak_tinymce::mce_gTxt('enable_body').br.
                                 n.yesnoRadio('hak_enable_body',$enable_body)
                                 ).
-                         n.graf(self::mce_gTxt('hak_tinymce_body_init').br.
-                                tag(tag("(".self::mce_gTxt('line_end').")","em"),"small").n.href(self::mce_gTxt('documentation'),"http://tinymce.moxiecode.com/documentation.php").br.
+                         n.graf(hak_tinymce::mce_gTxt('hak_tinymce_body_init').br.
+                                tag(tag("(".hak_tinymce::mce_gTxt('line_end').")","em"),"small").n.href(hak_tinymce::mce_gTxt('documentation'),"http://tinymce.moxiecode.com/documentation.php").br.
                                 n.text_area('hak_tinymce_body_init',200, 400, $body_init)
                                 ).
-                         n.graf(self::mce_gTxt('enable_excerpt').br.
+                         n.graf(hak_tinymce::mce_gTxt('enable_excerpt').br.
                                 n.yesnoRadio('hak_enable_excerpt',$enable_excerpt)
                                 ).
-                         n.graf(self::mce_gTxt('hak_tinymce_excerpt_init').br.
-                                tag(tag("(".self::mce_gTxt('line_end').")","em"),"small").n.href(self::mce_gTxt('documentation'),"http://tinymce.moxiecode.com/documentation.php").br.
+                         n.graf(hak_tinymce::mce_gTxt('hak_tinymce_excerpt_init').br.
+                                tag(tag("(".hak_tinymce::mce_gTxt('line_end').")","em"),"small").n.href(hak_tinymce::mce_gTxt('documentation'),"http://tinymce.moxiecode.com/documentation.php").br.
                                 n.text_area('hak_tinymce_excerpt_init',200,400,$excerpt_init)
                                 ).
-                         n.graf(self::mce_gTxt('hak_tinymce_callbacks').br.
+                         n.graf(hak_tinymce::mce_gTxt('hak_tinymce_callbacks').br.
                                 n.text_area('hak_tinymce_callbacks',200,400,$callbacks)
                                 ).
-                         n.graf(self::mce_gTxt('use_compressor').br.
+                         n.graf(hak_tinymce::mce_gTxt('use_compressor').br.
                                 n.yesnoRadio('hak_use_compressor',$use_compressor).
-                                self::file_exists(hak_compressor_path($tinymce_path), "compressor_not_found")
+                                hak_tinymce::file_exists(hak_compressor_path($tinymce_path), "compressor_not_found")
                                 ).
-                         n.graf(self::mce_gTxt('hak_tinymce_compressor_init').br.
-                                tag(tag("(".self::mce_gTxt('compressor_line_end').")","em"),"small").
-                                n.href(self::mce_gTxt('documentation'),"http://wiki.moxiecode.com/index.php/TinyMCE:Compressor/PHP").br.
+                         n.graf(hak_tinymce::mce_gTxt('hak_tinymce_compressor_init').br.
+                                tag(tag("(".hak_tinymce::mce_gTxt('compressor_line_end').")","em"),"small").
+                                n.href(hak_tinymce::mce_gTxt('documentation'),"http://wiki.moxiecode.com/index.php/TinyMCE:Compressor/PHP").br.
                                 n.text_area('hak_tinymce_compressor_init',200,400,$compressor_init)
                                 ).
                          n.n.fInput('submit', 'update', 'Update', 'smallerbox')
                          ).
                 '</div>';
 			echo n.t.'<div style="margin: 60px auto 0; width:40%;">'.
-				n.hed(self::mce_gTxt('uninstall'), '1').
-				n.t.t.graf(self::mce_gTxt('uninstall_message')).
+				n.hed(hak_tinymce::mce_gTxt('uninstall'), '1').
+				n.t.t.graf(hak_tinymce::mce_gTxt('uninstall_message')).
 				n.n.form(
                          n.eInput('hak_tinymce_prefs').
                          n.sInput('uninstall').
-                         n.n.fInput('submit', 'uninstall', 'Uninstall ', 'smallerbox'),"","confirm('".self::mce_gTxt('uninstall_confirm')."')"
+                         n.n.fInput('submit', 'uninstall', 'Uninstall ', 'smallerbox'),"","confirm('".hak_tinymce::mce_gTxt('uninstall_confirm')."')"
                          ).
 				'</div>';
         } else {
             echo n.t.'<div style="margin: auto; width:40%;">'.
                 n.t.t.hed('hak_tinymce '.gTxt('Preferences'), '1').
-                n.graf(self::mce_gTxt('install_message')).
+                n.graf(hak_tinymce::mce_gTxt('install_message')).
                 n.n.form(
                          n.eInput('hak_tinymce_prefs').
                          n.sInput('install').
@@ -285,9 +285,9 @@ class hak_tinymce {
         }
     }
 
-    // Private functions
-    private function compressor_js() {
-        extract(self::getPrefs());
+    //  functions
+     function compressor_js() {
+        extract(hak_tinymce::getPrefs());
         
         $js = "tinyMCE_GZ.init({ \n";
         $js.= rtrim($compressor_init, ",");
@@ -295,9 +295,9 @@ class hak_tinymce {
         return $js;
     }
 
-    private function js() {
+     function js() {
 
-        extract(self::getPrefs());
+        extract(hak_tinymce::getPrefs());
         $hu = hu;
         $js = <<<EOF
             
@@ -394,7 +394,7 @@ $js .= t.' });';
 		return $js;
     }
    
-    private function getPrefs() {
+     function getPrefs() {
         global $mcePrefs;
         
         if (!$mcePrefs) {
@@ -411,33 +411,33 @@ $js .= t.' });';
     }
  
     //--support functions 
-    private function is_edit_screen() {
+     function is_edit_screen() {
         $views = gpsa(array('from_view', 'view', 'step'));
 
         extract($views);
         return ($step == 'edit' || $view == 'text' || empty($from_view));
     }
 
-    private function isToggleChecked($toggle, $context) {
+     function isToggleChecked($toggle, $context) {
         global $prefs;
         
         $which_textile = "textile_".$toggle;
         $textile_setting = !is_numeric($context[$which_textile]) ? $prefs["use_textile"] : $context[$which_textile];
 
         $msg = '';
-        if (self::wasToggleChecked($toggle) || $textile_setting == LEAVE_TEXT_UNTOUCHED) {
+        if (hak_tinymce::wasToggleChecked($toggle) || $textile_setting == LEAVE_TEXT_UNTOUCHED) {
             $msg = 'checked="checked"';
         }
         return $msg;
     }
     
-    private function wasToggleChecked($toggle) {
+     function wasToggleChecked($toggle) {
         
         $toggles_array = gps("hak_tinymceToggle");
         return empty($toggles_array) ? false : in_array($toggle, $toggles_array);
     }
 
-    private function show_toggle($context_data) {
+     function show_toggle($context_data) {
         global $mcePrefs;
         
         if (!$mcePrefs["show_toggle"]) {
@@ -448,10 +448,10 @@ $js .= t.' });';
             return true;
         }
 
-        return self::showCheckbox('body', $context_data) || self::showCheckbox('excerpt', $context_data);
+        return hak_tinymce::showCheckbox('body', $context_data) || hak_tinymce::showCheckbox('excerpt', $context_data);
     }
 
-    private function showCheckbox($textarea, $context_data) {
+     function showCheckbox($textarea, $context_data) {
         global $mcePrefs;
 
         if ($mcePrefs["hide_on_textile_edit"] && !empty($context_data["ID"])) {
@@ -463,7 +463,7 @@ $js .= t.' });';
         return true;
     }
     
-    public function mce_gTxt($what) {
+    function mce_gTxt($what) {
         global $language;
 	
         $en_us = array(
@@ -502,23 +502,23 @@ $js .= t.' });';
 		return $msg;
     }
 
-    private function check_install() {
+     function check_install() {
         // Check if the hak_tinymce table already exists
         if (getThings("Show tables like '".PFX."txp_hak_tinymce'")) {
             // if it does check if we need to upgrade
             $pluginversion = safe_field('version','txp_plugin',"name = 'hak_tinymce'");
-            $prefs = self::getPrefs();
+            $prefs = hak_tinymce::getPrefs();
             $version = (array_key_exists('version', $prefs)) ? $prefs['version'] : "0.0" ;
             
             if (!empty($version) && $version != $pluginversion) {  // if the versions don't match send off to upgrade.
-                self::upgrade($version);
+                hak_tinymce::upgrade($version);
             }
             return true;
         }
         return false;
     }
 
-    private function install() {
+     function install() {
         
 		//figure out what MySQL version we are using (from _update.php)
 		$mysqlversion = mysql_get_server_info();
@@ -579,7 +579,7 @@ $js .= t.' });';
 				safe_insert("txp_hak_tinymce","pref_name='".$key."', pref_value='".$value."'");
 			}
 			// Run any necessary upgrades 
-            self::upgrade('0.0');
+            hak_tinymce::upgrade('0.0');
 			// delete old prefs
 			safe_delete("txp_prefs","name='hak_tinymce_init_form'");
 			safe_delete("txp_prefs","name='hak_tinymce_show_toggle'");
@@ -587,7 +587,7 @@ $js .= t.' });';
 		}
 		return true;
     }
-    private function upgrade($installedversion) {
+     function upgrade($installedversion) {
 
         if ($installedversion < '0.7') {
             
@@ -600,7 +600,7 @@ $js .= t.' });';
             $hak_tinymce_prefs["use_compressor"] = '0';
             $hak_tinymce_prefs["compressor_init"] = $hak_mceSettings_compressor;
             
-            self::update_version("0.7");
+            hak_tinymce::update_version("0.7");
             
             foreach ($hak_tinymce_prefs as $key => $value) {
                 if (!safe_field("pref_name", 'txp_hak_tinymce', "pref_name = '".$key."'")) {
@@ -612,23 +612,23 @@ $js .= t.' });';
         } // -- End 0.7 upgrade
 
         // Generic version updater
-        self::update_version("0.9.8");
+        hak_tinymce::update_version("0.9.9");
     }
     
-    private function update_version($version) {
+     function update_version($version) {
         safe_upsert('txp_hak_tinymce', "pref_value = '".$version."'", "pref_name = 'version'");
     }
 
-    private function file_exists($file, $message = "file_not_found") {
+     function file_exists($file, $message = "file_not_found") {
         global $path_to_site;
         $out = '';
         if (!file_exists($file) && !file_exists($path_to_site.$file)) {
-            $out = br.n.tag(self::mce_gTxt($message),"span",' style="color:red"');
+            $out = br.n.tag(hak_tinymce::mce_gTxt($message),"span",' style="color:red"');
         }
         return $out;
     }
 
-    public function map_attribs($arr) {
+    function map_attribs($arr) {
         $format = '{src:"'.$arr["path"].'"';
         $format .= (!empty($arr["width"])) ? ',width:'.$arr["width"] : '';
         $format .= (!empty($arr["height"])) ? ',height:'.$arr["height"] : '';
