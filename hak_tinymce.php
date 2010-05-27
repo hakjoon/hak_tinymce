@@ -11,7 +11,7 @@
 // Uncomment and edit this line to override:
 $plugin['name'] = 'hak_tinymce';
 
-$plugin['version'] = '0.9.9';
+$plugin['version'] = '0.9.9.1';
 // Allow raw HTML help, as opposed to Textile.
 // 0 = Plugin help is in Textile format, no raw HTML allowed (default).
 // 1 = Plugin help is in raw HTML.  Not recommended.
@@ -652,7 +652,7 @@ function hak_compressor_path($file) {
 function hak_txpimage() {
 	global $img_dir,$path_to_site,$txpcfg;
 	$category = gps("c");
-	$category = (!empty($category)) ? "and category='".$category."'" : "";
+	$category = (!empty($category)) ? "and category='".doSlash($category)."'" : "";
 	$rs = safe_rows_start("*", "txp_image","1=1 ".$category." order by category,name");
 	$src = gps("src");
 
