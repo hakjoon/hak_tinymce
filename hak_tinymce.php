@@ -629,7 +629,7 @@ $js .= t.' });';
     }
 
     function map_attribs($arr) {
-        $format = '{src:"'.$arr["path"].'"';
+        $format = '{src:"'.hu.$arr["path"].'"';
         $format .= (!empty($arr["width"])) ? ',width:'.$arr["width"] : '';
         $format .= (!empty($arr["height"])) ? ',height:'.$arr["height"] : '';
         $format .= (!empty($arr["alt"])) ? ',alt:"'.$arr["alt"].'"' : '';
@@ -662,7 +662,7 @@ function hak_txpimage() {
 		while ($a = nextRow($rs)) {
 			extract($a);
 			$thumbclick ='';
-			$image["path"] = hu.$img_dir.'/'.$id.$ext;
+			$image["path"] = $img_dir.'/'.$id.$ext;
 			$image["width"] = $w;
 			$image["height"] = $h;
 			$image["alt"] = (empty($alt)) ? "" : rawurlencode($alt);
@@ -673,7 +673,7 @@ function hak_txpimage() {
 			$thumb = $image;
 			
 			if($thumbnail) {
-				$thumb["path"] = hu.$img_dir.'/'.$id.'t'.$ext;
+				$thumb["path"] = $img_dir.'/'.$id.'t'.$ext;
 				$thumb["width"] = $thumb_w;
 				$thumb["height"] = $thumb_h;
 				$thumb["alt"] = $image["alt"];
@@ -704,7 +704,7 @@ function hak_txpimage() {
 				$margin = "0 ".intval($margin)."px";
 			}
 			$selected = ($src == $image["path"] || $src == $thumb["path"]) ? "active" : "";
-			$out[] = '<div class="image '.$selected.'"><div style="padding:'.$margin.'"><img src="'.$preview["path"].'" height="'.$new["height"].'" width="'.$new["width"].'" onclick="window.open(\''.$image["path"].'\',\'mypopup\', \'menubar=0,status=0,height='.$image["height"].',width='.$image["width"].'\')"/></div>'.
+			$out[] = '<div class="image '.$selected.'"><div style="padding:'.$margin.'"><img src="'.rhu.$preview["path"].'" height="'.$new["height"].'" width="'.$new["width"].'" onclick="window.open(\''.rhu.$image["path"].'\',\'mypopup\', \'menubar=0,status=0,height='.$image["height"].',width='.$image["width"].'\')"/></div>'.
                 '<a href="#" '.$onclick.'><img src="img/picture.png" width="18" height="18" alt="'.hak_tinymce::mce_gTxt('insert_image').'" title="'.hak_tinymce::mce_gTxt('insert_image').'" /></a>'.
                 $thumbclick.
                 '</div>';

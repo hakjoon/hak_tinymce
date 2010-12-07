@@ -446,7 +446,7 @@ var TxpImageDialog = {
 	if (!st && tinyMCEPopup.getParam("txpimage_update_dimensions_onchange", true)) {
 	    this.resetImageData();
 	}
-	u = tinyMCEPopup.editor.documentBaseURI.toAbsolute(u);
+	u = tinymce + u;
 	
 	if (!st) {
 			tinyMCEPopup.dom.setHTML('prev', '<img id="previewImg" src="' + u + '" border="0" onload="ImageDialog.updateImageData(this);" onerror="ImageDialog.resetImageData();" />');
@@ -455,7 +455,7 @@ var TxpImageDialog = {
 	}
     },
     // Load image categories
-    txpEndPoint: tinyMCEPopup.editor.documentBaseURI.toAbsolute('textpattern/index.php'),
+    txpEndPoint: tinymce.documentBaseURL + 'index.php',
     prepareCategories: function () {
 	tinymce.util.XHR.send({
 	    url:this.txpEndPoint + '?event=hak_txpcatselect',
