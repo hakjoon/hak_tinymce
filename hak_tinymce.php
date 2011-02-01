@@ -629,7 +629,7 @@ $js .= t.' });';
     }
 
     function map_attribs($arr) {
-        $format = '{src:"'.hu.$arr["path"].'"';
+        $format = '{src:"'.$arr["path"].'"';
         $format .= (!empty($arr["width"])) ? ',width:'.$arr["width"] : '';
         $format .= (!empty($arr["height"])) ? ',height:'.$arr["height"] : '';
         $format .= (!empty($arr["alt"])) ? ',alt:"'.$arr["alt"].'"' : '';
