@@ -1,0 +1,41 @@
+require 'fileutils'
+namespace "hak_tinymce" do 
+  COMPRESSOR_FILES = FileList['tinymce_compressor_php/tiny_mce_gzip.*']
+
+  directory "dev"
+  
+  file "dev/tiny_mce" => "dev" do
+    puts "Copying TinyMCE into dev/"
+    FileUtils.cp_r "tinymce-distro/jscripts/tiny_mce", "dev/"
+  end
+
+  COMPRESSOR_FILES.each do |cf|
+    file cf => 'dev/tiny_mce' do
+      puts "Copying #{cf} into dev/tiny_mce"
+      FileUtils.cp cf, "dev/tiny_mce/"
+    end
+  end
+
+  task :symlink_txpimage => "dev/tiny_mce" do
+    puts "Symlinking txpimage into plugins folder"
+    FileUtils.ln_s "txpimage", "dev/tiny_mce/plugins/txpimage"
+  end
+
+  task :symlink_plugin => "dev" do
+    puts "Symlinking plugin file into dev dir"
+    FileUtils.ln_s "hak_tinymce.php", "dev/hak_tinymce.php"
+  end
+
+  task :copy_distro => ["dev/tiny_mce"] | COMPRESSOR_FILES
+
+  desc "Setup for development"
+  task :dev_setup => [:copy_distro, :symlink_txpimage, :symlink_plugin] 
+
+end
+
+
+
+
+
+
+
