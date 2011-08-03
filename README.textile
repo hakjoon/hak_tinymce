@@ -1,0 +1,57 @@
+h1. This plugin adds a TinyMCE based WYSIWYG editor to Textpattern.
+
+h2. Installation
+
+# Upload the included TinyMCE distribution to somewhere in your document root. The default location is in your /textpattern/ directory.
+# Install the plugin included in hak_tinymce.txt and activate it. Installing plugins
+# Go to Extensions -> hak_tinyme and run the installation.
+# If you placed TinyMCE somewhere other then in /textpattern/ you can set the location now
+
+h2. Behavior
+
+* The editor will not come on by default on blank articles if “Use Textile” is selected in the Preferences. If you want to use the editor all the time change the default to “Leave text untouched”
+* If textile is turned on it will be disabled if you toggle the editor on. Conversely if you turn Textile back on it will turn off the editor.
+
+h2. Configuration
+
+A hak_tinymce tab is available under extensions with the following options.
+
+* *Show editor toggle.*
+** Determines whether to show the Toggle Editor link. Default is yes. The toggle is automatically hidden if you disable the editor for the article body and the article excerpt below.
+* *Hide editor toggle when editing articles created with textile or convert linebreaks.*
+** Determines if the Toggle Editor link should be available when editing articles that where created using textile or convert linebreaks. Default is yes.
+* *Hide “Use textile” Dropdowns*
+** *Determines if the “Use Textile” Dropdowns should be hidden. Default is yes.*
+* *Path to tiny_mce script*
+** The path to the TinyMCE script to use. Should be either relative to /textpattern/ or to your document root.
+* *Enable for article body:*
+** Determines if the editor can be activated for the Article Body.
+* *Initialization for article body editor:*
+** The initialization block to use for the article body editor. Configuration documentation can be found on the tinyMCE site.
+* *Enable for article excerpt:*
+** Determines if the editor can be activated for the Article excerpt.
+* *Initialization for article excerpt editor:*
+** The initialization block to use for the article excerpt editor. Configuration documentation can be found on the tinyMCE site.
+* *Callback functions*
+** Allows you to add functions that can be used by TinyMCE callbacks.
+* *Use the Gzip Compressor*
+** Determines if the Gzip Compressor should be used.
+* *Initialization for Gzip compressor*
+** The Initialization block for the Gzip compressor. Documentation can be found on the tinyMCE Site
+
+h2. Uninstall
+
+You also have the option to uninstall the preferences table that is created during installation. The TinyMCE installation needs to be removed manually.
+
+h3. Default initialization string
+
+This new version uses a mostly stock initialization string with a few exceptions.
+
+* *convert_fonts_to_spans* is set to true because we all should try to use font tags. This can be overridden in the init blocks.
+* The _TXPImage_ plugin replaces the standard image insert dialog. This can be overridden in the init blocks.
+document_base_url is automatically set to the value of Site URL. This can be overridden, but should not be necessary.
+* *mode* is set to none so that the toggles work. This cannot be overridden or else the toggles will not work properly
+
+h2. Inserting images with TXPImage
+
+TXPImage is a custom image browsing plugin that integrates into the TXP backend. It allows you to browse your image categories and insert either the thumbnail or full size images for each image. It is hopefully easy to use.
