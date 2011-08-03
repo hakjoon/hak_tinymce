@@ -1,0 +1,4 @@
+*.zip
+
+# Ignore dev folder
+dev/
