@@ -1,5 +1,9 @@
 require 'fileutils'
+require 'rake/clean'
+
 namespace "hak_tinymce" do 
+
+  CLEAN.include('dev')
   COMPRESSOR_FILES = FileList['tinymce_compressor_php/tiny_mce_gzip.*']
 
   directory "dev"
