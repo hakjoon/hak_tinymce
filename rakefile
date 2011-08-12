@@ -5,6 +5,7 @@ namespace "hak_tinymce" do
 
   CLEAN.include('dev')
   COMPRESSOR_FILES = FileList['tinymce_compressor_php/tiny_mce_gzip.*']
+  DIR = Rake.original_dir
 
   directory "dev"
   
@@ -22,12 +23,12 @@ namespace "hak_tinymce" do
 
   task :symlink_txpimage => "dev/tiny_mce" do
     puts "Symlinking txpimage into plugins folder"
-    FileUtils.ln_s "txpimage", "dev/tiny_mce/plugins/txpimage"
+    FileUtils.ln_s "#{DIR}/txpimage", "#{DIR}/dev/tiny_mce/plugins/txpimage", :verbose => true
   end
 
   task :symlink_plugin => "dev" do
     puts "Symlinking plugin file into dev dir"
-    FileUtils.ln_s "hak_tinymce.php", "dev/hak_tinymce.php"
+    FileUtils.ln_s "#{DIR}/hak_tinymce.php", "#{DIR}/dev/hak_tinymce.php", :verbose => true
   end
 
   task :copy_distro => ["dev/tiny_mce"] | COMPRESSOR_FILES
