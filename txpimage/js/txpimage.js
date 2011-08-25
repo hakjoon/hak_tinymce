@@ -458,7 +458,7 @@ var TxpImageDialog = {
     txpEndPoint: tinymce.documentBaseURL + 'index.php',
     prepareCategories: function () {
 	tinymce.util.XHR.send({
-	    url:this.txpEndPoint + '?event=hak_txpcatselect',
+	    url:this.txpEndPoint + '?event=hak_txpcatselect&_rnd=' + new Date().getTime(),
 	    type:"GET",
 	    scope: this,
 	    success: function (response) {
@@ -475,7 +475,7 @@ var TxpImageDialog = {
 	var src = tinyMCEPopup.dom.get('src').value || '';
 	
 	tinymce.util.XHR.send({
-	    url:this.txpEndPoint + '?event=hak_txpimage&src='+ src + '&c='+ selCat,
+	    url:this.txpEndPoint + '?event=hak_txpimage&src='+ src + '&c='+ selCat + '&_rnd=' + new Date().getTime(),
 	    type: 'GET',
 	    success: function (response) {
 		tinyMCEPopup.dom.setHTML("image_browse", response);
