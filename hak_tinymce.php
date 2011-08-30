@@ -89,7 +89,7 @@ class hak_tinymce {
                 '<div id="hak_tinymce" class="toggle" style="display:none">'.
                 '<p>';
             if ($enable_body && hak_tinymce::showCheckbox('body', $context_data)) {
-                $msg .= '<input type="checkbox" value="body" id="hakToggle-body" name="hak_tinymceToggle[]" class="checkbox" style="width:auto" '.hak_tinymce::isToggleChecked('body', $context_data).'" />'.
+                $msg .= '<input type="checkbox" value="body" id="hakToggle-body" name="hak_tinymceToggle[]" class="checkbox" style="width:auto" '.hak_tinymce::isToggleChecked('body', $context_data).' />'.
                     '<label for="hakToggle-body">'.ucwords(gTxt('article')).'</label><br />';
             }
             if ($enable_excerpt && hak_tinymce::showCheckbox('excerpt',$context_data)) {
