@@ -376,7 +376,9 @@ EOF;
                     }
                     
                 })();
-                $('form.async').on('click', 'input[type=submit]', tinyMCE.triggerSave);
+                $('form.async').on('click', 'input[type=submit]', function (evt) {
+                   tinyMCE.triggerSave();
+                });
 
         
 EOF;
