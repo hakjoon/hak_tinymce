@@ -11,7 +11,7 @@
 // Uncomment and edit this line to override:
 $plugin['name'] = 'hak_tinymce';
 
-$plugin['version'] = '1.0.2.2';
+$plugin['version'] = '1.0.2.3';
 // Allow raw HTML help, as opposed to Textile.
 // 0 = Plugin help is in Textile format, no raw HTML allowed (default).
 // 1 = Plugin help is in raw HTML.  Not recommended.
@@ -616,7 +616,7 @@ $js .= t.' });';
         } // -- End 0.7 upgrade
 
         // Generic version updater
-        hak_tinymce::update_version("1.0.2.2");
+        hak_tinymce::update_version("1.0.2.3");
     }
     
      function update_version($version) {
