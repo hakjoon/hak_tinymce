@@ -2,7 +2,7 @@
 
 NAME="hak_tinymce"
 CURRENT_DIR=$(pwd)
-DEV_DIR="/var/www/textpattern/textpattern/plugins"
+DEV_DIR="dev"
 TINYMCE_DIR="tiny_mce"
 DISTRO_DIR="$CURRENT_DIR/tinymce-distro/jscripts/$TINYMCE_DIR"
 COMPRESSOR_DIR="$CURRENT_DIR/tinymce_compressor_php"
